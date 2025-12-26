@@ -1,0 +1,3107 @@
+{
+  "name": "Tro ly chinh",
+  "nodes": [
+    {
+      "parameters": {
+        "description": "Sử dụng công cụ này để suy nghĩ về một vấn đề nào đó. Nó sẽ không thu thập thông tin mới hoặc thay đổi cơ sở dữ liệu, mà chỉ thêm suy nghĩ đó vào nhật ký. Sử dụng công cụ này khi cần suy luận phức tạp hoặc bộ nhớ đệm."
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1.1,
+      "position": [
+        -64,
+        1648
+      ],
+      "id": "34b69da7-0b85-45d4-8f35-81d5e311c208",
+      "name": "Think",
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('chat_bot').item.json.body.message.from.id }}",
+        "databaseName": "MinhKhoaAI",
+        "contextWindowLength": 50
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryMongoDbChat",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        1648
+      ],
+      "id": "04e7d0e2-a74f-4fd1-8f23-07900d83ab5a",
+      "name": "MongoDB Chat Memory",
+      "credentials": {
+        "mongoDb": {
+          "id": "wR5t7Mbd0bIPSXcv",
+          "name": "MongoDB account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Initialize the output arrays\nconst steps = [];\nconst tokens = [];\nlet totalTokens = 0; // Changed to track total tokens instead of cost\n\n// Process each item in the input\nfor (const item of $input.all()) {\n  let data = item.json;\n  \n  // Check if the data is an array itself (like your example JSON)\n  if (Array.isArray(data)) {\n    // Process each object in the array\n    for (const obj of data) {\n      // Extract steps information\n      if (obj.intermediateSteps && Array.isArray(obj.intermediateSteps)) {\n        for (const step of obj.intermediateSteps) {\n          if (step.action) {\n            steps.push({\n              tool: step.action.tool,\n              toolInput: step.action.toolInput,\n              observation: step.observation\n            });\n          }\n        }\n      }\n      \n      // Extract token information\n      if (obj.intermediateSteps && Array.isArray(obj.intermediateSteps)) {\n        for (const step of obj.intermediateSteps) {\n          if (step.action && step.action.messageLog && Array.isArray(step.action.messageLog)) {\n            for (const message of step.action.messageLog) {\n              if (message.kwargs && message.kwargs.response_metadata && message.kwargs.response_metadata.usage) {\n                const usage = message.kwargs.response_metadata.usage;\n                tokens.push({\n                  prompt_tokens: usage.prompt_tokens,\n                  completion_tokens: usage.completion_tokens,\n                  total_tokens: usage.total_tokens,\n                  model_name: message.kwargs.response_metadata.model_name\n                });\n                \n                // Add the tokens to our running total\n                if (typeof usage.total_tokens === 'number') {\n                  totalTokens += usage.total_tokens;\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  } else {\n    // If data is not an array, process it as a single object\n    // Extract steps information\n    if (data.intermediateSteps && Array.isArray(data.intermediateSteps)) {\n      for (const step of data.intermediateSteps) {\n        if (step.action) {\n          steps.push({\n            tool: step.action.tool,\n            toolInput: step.action.toolInput,\n            observation: step.observation\n          });\n        }\n      }\n    }\n    \n    // Extract token information\n    if (data.intermediateSteps && Array.isArray(data.intermediateSteps)) {\n      for (const step of data.intermediateSteps) {\n        if (step.action && step.action.messageLog && Array.isArray(step.action.messageLog)) {\n          for (const message of step.action.messageLog) {\n            if (message.kwargs && message.kwargs.response_metadata && message.kwargs.response_metadata.usage) {\n              const usage = message.kwargs.response_metadata.usage;\n              tokens.push({\n                prompt_tokens: usage.prompt_tokens,\n                completion_tokens: usage.completion_tokens,\n                total_tokens: usage.total_tokens,\n                model_name: message.kwargs.response_metadata.model_name\n              });\n              \n              // Add the tokens to our running total\n              if (typeof usage.total_tokens === 'number') {\n                totalTokens += usage.total_tokens;\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n\n// Return the processed data with total_tokens included\nreturn [{\n  json: {\n    steps: steps,\n    tokens: tokens,\n    total_tokens: totalTokens\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1296,
+        960
+      ],
+      "id": "d298444e-33b1-4b61-9aca-eef938519486",
+      "name": "Clean Up",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.voice.file_id }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "c2f3f97f-cca9-472a-b597-b9fc6c6cd232"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Voice"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "8c844924-b2ed-48b0-935c-c66a8fd0c778",
+                    "leftValue": "={{ $('chat_bot').item.json.body.message.text }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Text"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "8b435dee-29e5-4ac2-a827-1811c2f6f04d",
+                    "leftValue": "={{ $('chat_bot').item.json.body.message.photo_url }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Image Only"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "d39eb705-3eb9-4867-8448-9d3e4c72ea4d",
+                    "leftValue": "={{ $('chat_bot').item.json.body.message.from.id }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Documents"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "45af575c-dd6a-4b8d-9f97-7856f1bda776",
+                    "leftValue": "={{ $json.body.message.photo_url }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Image + Caption"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2e3a8840-05d0-4ac2-8833-80241e6cbf35",
+      "name": "Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -3584,
+        1040
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "976cf2c9-01b6-46cf-97b4-675a67ca57bc",
+              "name": "content",
+              "value": "={{ $('chat_bot').item.json.body.message.text || $('chat_bot').item.json.message?.caption || \"[Ảnh được gửi - cần phân tích nếu muốn xem nội dung]\" }}",
+              "type": "string"
+            },
+            {
+              "id": "1386acc3-8824-4679-8b17-27dbead94954",
+              "name": "type",
+              "value": "={{ \n  $json.role === 'model' && $('Transcribe a recording').item ? 'voice' :\n  $json.role === 'model' && $('Analyze an image').item ? 'image' :\n  $json.role === 'model' && $('Analyze document').item ? 'document' :\n  'text'\n}}",
+              "type": "string"
+            },
+            {
+              "id": "25e9ee59-63c9-4eb4-a9b2-0847f4f83b67",
+              "name": "prompt",
+              "value": "={{ $('chat_bot').item.json.message?.caption || $('chat_bot').item.json.body.message.text || $json.content?.parts?.[0]?.text || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "4a5e3df4-333a-43c6-9f72-4fe8b2bf9b60",
+              "name": "metadata",
+              "value": "={{   JSON.stringify({     fileName: $('chat_bot').item.json.message?.document?.file_name || \"\",     fileSize: $('chat_bot').item.json.message?.document?.file_size || 0,     userName: $('chat_bot').item.json.message?.from?.first_name || \"\",     chatId: $('chat_bot').item.json.message?.chat?.id || \"\"   }) }}",
+              "type": "string"
+            },
+            {
+              "id": "0e732c1e-5c23-4edc-b83d-4a930d71ee0a",
+              "name": "imageUrl",
+              "value": "={{ $('chat_bot').item.json.body.message.photo_url || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "2f6f8591-4a42-403b-9e7c-61e93c104055",
+              "name": "imageAnalysis",
+              "value": "={{ $json.content?.parts?.[0]?.text || $json.text || \"\" }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1872,
+        1056
+      ],
+      "id": "a4c8b487-4728-4da8-9fea-26ef07bde04c",
+      "name": "Input"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        -2992,
+        912
+      ],
+      "id": "ca2913f9-26d4-4940-ba5d-1bf3fc5aaeea",
+      "name": "Transcribe a recording",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ivMQFozfvyKtTYit",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "tpT1XJjGzSmEFvqd",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/tpT1XJjGzSmEFvqd",
+          "cachedResultName": "My project — Tro ly Email"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "chatInput": "={{ $json.input }}",
+            "voice": "={{ $('Set \\'Text\\'').item.json.text }}"
+          },
+          "matchingColumns": [
+            "chatInput"
+          ],
+          "schema": [
+            {
+              "id": "chatInput",
+              "displayName": "chatInput",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "voice",
+              "displayName": "voice",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        336,
+        1648
+      ],
+      "id": "d839856d-4e54-47e4-b73b-d2359b0b9363",
+      "name": "Tro ly Email"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.content?.parts?.[0]?.text || $json.content || $json.input || $json.text || $('chat_bot').item.json.body.message.text || $json.prompt || $json.body.message.text || $json.imageUrl ||\"\" }}",
+        "options": {
+          "systemMessage": "# ⛔ CẢNH BÁO: ĐỌC KỸ TRƯỚC KHI LÀM BẤT CỨ ĐIỀU GÌ\n\n## 🚫 TUYỆT ĐỐI CẤM TỰ TRẢ LỜI\n\nBạn là DISPATCHER (Điều phối viên), KHÔNG PHẢI chuyên gia.\n\n❌ BẠN KHÔNG ĐƯỢC:\n- Tự trả lời câu hỏi về giá cả, sản phẩm, vật liệu\n- Tự tính toán bất kỳ con số nào\n- Tự tạo báo giá\n- Trả lời \"em cần thêm thông tin\" mà không gọi tool\n\n✅ BẠN CHỈ ĐƯỢC:\n- Nhận yêu cầu → Gọi tool → Trả kết quả từ tool\n- Hỏi lại sếp NẾU không hiểu yêu cầu\n\n---\n\n## 📋 BẢNG GỌI TOOL BẮT BUỘC\n\n| Khi sếp nói | GỌI NGAY tool này |\n|-------------|-------------------|\n| báo giá, tính giá, giá bao nhiêu, tạo đơn, lên đơn, tủ, bàn, ghế, giường, kệ, sản phẩm, vật liệu, gỗ | **Tro ly ke toan** |\n| tồn kho, còn hàng, số lượng, kiểm tra kho | Tro ly kho |\n| tiến độ, thi công, lịch làm việc, nhân sự | Tro ly thi cong |\n| email, gửi mail, viết mail | Tro ly mail |\n| lịch hẹn, đặt lịch, xem lịch | Tro ly lich |\n| bản vẽ, kỹ thuật, CAD, thiết kế | Tro ly ky thuat |\n| buồn, vui, tâm sự, thời tiết, tin tức | Tro ly thong thai |\n\n---\n\n## ✅ VÍ DỤ ĐÚNG (LÀM THEO)\n\n### Ví dụ 1: Tạo báo giá\n```\nUser: \"Tạo báo giá cho khách A, 2 tủ quần áo\"\n→ GỌI tool \"Tro ly ke toan\" với input: \"Tạo báo giá cho khách A, 2 tủ quần áo\"\n→ Trả về kết quả từ tool\n```\n\n### Ví dụ 2: Hỏi giá\n```\nUser: \"Giá gỗ sồi bao nhiêu?\"\n→ GỌI tool \"Tro ly ke toan\" với input: \"Giá gỗ sồi bao nhiêu?\"\n→ Trả về kết quả từ tool\n```\n\n### Ví dụ 3: Tạo lại báo giá\n```\nUser: \"Tạo lại báo giá\"\n→ GỌI tool \"Tro ly ke toan\" với input: \"Tạo lại báo giá\"\n→ Trả về kết quả từ tool\n```\n\n---\n\n## ❌ VÍ DỤ SAI (TUYỆT ĐỐI KHÔNG LÀM)\n\n```\nUser: \"Tạo báo giá cho khách A\"\n❌ SAI: \"Dạ sếp, để tạo báo giá em cần thêm thông tin về sản phẩm...\"\n❌ SAI: \"Sếp muốn báo giá sản phẩm gì ạ?\"\n❌ SAI: Tự liệt kê thông tin sản phẩm\n\n✅ ĐÚNG: Gọi tool \"Tro ly ke toan\" với input gốc, để tool đó tự hỏi thêm nếu cần\n```\n\n---\n\n# OVERVIEW\n\nBạn là Trợ lý AI chính (Dispatcher) của xưởng nội thất MinhKhoa.\n\n**Nhiệm vụ DUY NHẤT:** Nhận yêu cầu → Gọi tool phù hợp → Trả kết quả từ tool\n\n# TOOLS\n\n1. **Tro ly ke toan** ⭐ QUAN TRỌNG NHẤT\n   - Dùng cho: báo giá, tính toán, giá cả, sản phẩm, vật liệu, tủ, bàn, ghế, gỗ\n   - Input: Toàn bộ yêu cầu của sếp (copy nguyên văn)\n\n2. **Tro ly kho**: Tồn kho, số lượng, kiểm tra hàng\n\n3. **Tro ly thi cong**: Tiến độ, thi công, nhân sự\n\n4. **Tro ly thong thai**: Tâm sự, chủ đề ngoài công việc\n\n5. **Tro ly mail**: Email\n\n6. **Tro ly lich**: Lịch hẹn\n\n7. **Tro ly ky thuat**: Bản vẽ, kỹ thuật, CAD\n\n8. **Think**: Khi cần suy nghĩ phức tạp\n\n# OUTPUT FORMAT\n\n1. Text thuần, KHÔNG dùng markdown (**, ##, ```)\n2. Xưng hô: \"em\" - \"sếp\"\n3. Chỉ chào ở lần tương tác ĐẦU TIÊN\n4. KHÔNG nói \"em đã chuyển cho trợ lý...\"\n5. Trả kết quả TRỰC TIẾP từ tool\n\n# RESPONSE TYPE (Ghi ở cuối response)\n\nSau khi có kết quả từ tool, ghi thêm:\n\n- `RESPONSE_TYPE: \"quote_new\"` - Khi tạo báo giá mới (có ảnh + PDF)\n- `RESPONSE_TYPE: \"send_pdf\"` - Khi gửi lại PDF\n- `RESPONSE_TYPE: \"send_image\"` - Khi gửi lại ảnh\n- `RESPONSE_TYPE: \"text_only\"` - Khi trả lời text thông thường\n\n---\n\n# ⚠️ NHẮC LẠI LẦN CUỐI\n\n**KHÔNG BAO GIỜ TỰ TRẢ LỜI VỀ:**\n- Giá cả\n- Sản phẩm\n- Vật liệu\n- Tính toán\n- Báo giá\n\n**LUÔN GỌI TOOL \"Tro ly ke toan\" cho các yêu cầu trên!**\n\n## KIẾN THỨC ĐÃ HỌC\n{{ $json.learningContext }}\n\n# QUY TẮC SỬ DỤNG KIẾN THỨC\n1. NẾU có kiến thức liên quan trong \"KIẾN THỨC ĐÃ HỌC\" → ƯU TIÊN sử dụng\n2. Khi sếp dạy điều mới hoặc sửa sai → GỌI tool \"Hoc kien thuc moi\" để ghi nhớ\n3. Nếu không chắc chắn → Hỏi lại sếp\n\n# TRIGGER GHI NHỚ\nKhi sếp nói: \"nhớ là...\", \"ghi nhớ...\", \"sai rồi, đúng là...\", \"từ giờ...\", \"quy định mới...\"\n→ GỌI NGAY tool \"Hoc kien thuc moi\"",
+          "returnIntermediateSteps": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        64,
+        1056
+      ],
+      "id": "994f04fb-ecc6-4c48-b362-0b1a8851ace6",
+      "name": "Tro ly chinh",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "description": "Thực hiện các chức năng của Google lịch",
+        "workflowId": {
+          "__rl": true,
+          "value": "eLrbhgmz6YTdIcVE",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/eLrbhgmz6YTdIcVE",
+          "cachedResultName": "My project — Tro ly lich"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        464,
+        1648
+      ],
+      "id": "2f933ca1-2e77-4c85-bca7-88db1cbdb6a7",
+      "name": "Tro ly lich"
+    },
+    {
+      "parameters": {
+        "description": "Bạn là Trợ lý Kỹ thuật chuyên trách (TechSpec AI) của xưởng nội thất MinhKhoa.\nNhiệm vụ của bạn là nhận thông tin bản vẽ/yêu cầu từ sếp (hoặc từ agent điều phối), sau đó phân tích kỹ thuật, bóc tách khối lượng và tính toán định mức vật tư chính xác để phục vụ sản xuất.",
+        "workflowId": {
+          "__rl": true,
+          "value": "t63HlYXCREmvkDdf",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/t63HlYXCREmvkDdf",
+          "cachedResultName": "Tro ly ky thua"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "content": "={{ JSON.stringify($json) }}",
+            "type": "={{ $json.type }}",
+            "prompt": "={{ $json.prompt }}",
+            "metadata": "={{ $json.metadata }}",
+            "imageUrl": "={{ $json.imageUrl || \"\" }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "content",
+              "displayName": "content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "type",
+              "displayName": "type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "prompt",
+              "displayName": "prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "metadata",
+              "displayName": "metadata",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "imageUrl",
+              "displayName": "imageUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        1648
+      ],
+      "id": "eedb8c5c-5a9f-491a-98cf-bdd1679d791f",
+      "name": "Tro ly ky thuat"
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-2.0-flash-001",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -3792,
+        2048
+      ],
+      "id": "77d55bdb-03db-47e5-b912-388e3e732c9f",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "MJfpFBAmvmcIM1N3",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.mime_type }}",
+                    "rightValue": "application/pdf",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "bc7c149d-27bb-46c4-ba95-ed516cc67b24"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "PDF"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "50c82333-aa74-4da8-a595-d8aa20d8901b",
+                    "leftValue": "={{ $json.mime_type }}",
+                    "rightValue": "word",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Word"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "0c7bfdb4-6711-4449-a567-d48e82089f01",
+                    "leftValue": "={{ $json.mime_type }}",
+                    "rightValue": "sheet",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Excel"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "849656ec-d703-4e8f-9544-3609249874b3",
+                    "leftValue": "={{ $json.file_extension }}",
+                    "rightValue": "dwg",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "DWG"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "76f19cd5-855d-448f-b5e1-fd0a78c62ce5",
+                    "leftValue": "={{ $json.file_extension }}",
+                    "rightValue": "dxf",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "DXF"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "dc2e32e5-6475-4710-8c42-fedac5ab954b",
+                    "leftValue": "={{ $json.mime_type }}",
+                    "rightValue": "image",
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Image As Document"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -2784,
+        1488
+      ],
+      "id": "9cdb06b4-11e1-4c3c-9f94-4fc9d6f2254c",
+      "name": "Switch2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5e9f46cd-4af5-42ac-b18e-473ae9c78ee1",
+              "name": "file_id",
+              "value": "={{ $('chat_bot1').item.json.message.document.file_id }}",
+              "type": "string"
+            },
+            {
+              "id": "b3f55b7b-52f4-4e47-8d7e-72d8d74f6979",
+              "name": "file_name",
+              "value": "={{ $('chat_bot1').item.json.message.document.file_name }}",
+              "type": "string"
+            },
+            {
+              "id": "7fa10781-7b35-4111-b855-1759e8a04abb",
+              "name": "file_size",
+              "value": "={{ $('chat_bot1').item.json.message.document.file_size }}",
+              "type": "number"
+            },
+            {
+              "id": "d52661be-f338-4431-a643-ab13690ffa77",
+              "name": "mine_type",
+              "value": "={{ $('chat_bot1').item.json.message.document.mime_type }}",
+              "type": "string"
+            },
+            {
+              "id": "434023a4-2a87-4a84-92c6-57d3592802c0",
+              "name": "file_extension",
+              "value": "={{ $('chat_bot1').item.json.message.document.file_name.split('.').pop().toLowerCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "6457640a-2104-48fe-a47b-000f8e556039",
+              "name": "caption",
+              "value": "={{ $('chat_bot1').item.json.message.caption || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2992,
+        1488
+      ],
+      "id": "13a69edd-cfe4-46dc-a06a-a358198a6c6b",
+      "name": "Edit Fields",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "resource": "document",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "text": "=Phân tích tài liệu này:\\n\\n**Loại file:** {{ $json.file_name }}\\n**Mô tả từ user:** {{ $json.caption }}\\n\\nTrích xuất:\\n1. Nội dung chính\\n2. Thông số kỹ thuật (nếu có)\\n3. Kích thước, vật liệu (nếu là bản vẽ)\\n4. Giá cả (nếu là báo giá)",
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        -2416,
+        1488
+      ],
+      "id": "04c4985f-023c-4e18-97f1-5e6ba49d06e2",
+      "name": "Analyze document",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ivMQFozfvyKtTYit",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "fa7c23ed-4575-4852-97c4-578515ce3590",
+              "leftValue": "={{ $json.file_size }}",
+              "rightValue": 20971520,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -2416,
+        1680
+      ],
+      "id": "24e35f14-4911-4a3e-acc6-b507d757b65e",
+      "name": "If File Size < 20MB"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://v2.convertapi.com/convert/dwg/to/pdf",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer XJDhHpS7ZAFrMItEv3t9ROmMgT0dB3nz"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "StoreFile",
+              "value": "true"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "File"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -2144,
+        1520
+      ],
+      "id": "67b95d8a-80ba-4fab-a373-5e0c0dbcafe4",
+      "name": "CAD to PDF",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://bot-api.zapps.me/bot3560693075024509922:IRydnWGAAtlekyTBevNhCHkSOOsuCWvBMphBNeSurWcpTbkMgRSRTpvKJbWMWbYX/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $('chat_bot').item.json.body.message.chat.id }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.error }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        464,
+        1168
+      ],
+      "id": "afedfef2-9f84-474a-b3b9-cff9a7724ae1",
+      "name": "Error Message1"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "2c429418-efa2-4357-ba0a-c02758bbd000",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -4256,
+        1104
+      ],
+      "id": "d461918f-f601-4650-91e9-64945b2a94c9",
+      "name": "chat_bot",
+      "webhookId": "2c429418-efa2-4357-ba0a-c02758bbd000"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('chat_bot').item.json.body.message.photo_url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -3216,
+        1232
+      ],
+      "id": "cc2f17ad-ae0f-4de4-8d8e-168923554a6f",
+      "name": "Download Image",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://f19-zpc.zdn.vn/jpg/3991656014868884191/603153a06fd3e08db9c2.jpg",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -3216,
+        912
+      ],
+      "id": "51860a75-3585-416b-89bc-81d278165b61",
+      "name": "Download Voice",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Z1WZcw2zQ2CvRsskYR5JqlAPW3xfYpUcGIZr31UgM6U",
+          "mode": "list",
+          "cachedResultName": "Agent Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Z1WZcw2zQ2CvRsskYR5JqlAPW3xfYpUcGIZr31UgM6U/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Trang tính1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Z1WZcw2zQ2CvRsskYR5JqlAPW3xfYpUcGIZr31UgM6U/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $now.format('yyyy-MM-dd hh:m a') }}",
+            "Workflow": "={{ $workflow.name }}",
+            "Input": "={{ $('Input').item.json.body.message.text }}",
+            "Total tokens": "={{ $json.total_tokens }}",
+            "Token": "={{ JSON.stringify($json.steps, null, 2) }}",
+            "Output": "={{ $('Tro ly chinh').item.json.output }}",
+            "Actions": "={{ JSON.stringify($json.steps, null, 2) }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Workflow",
+              "displayName": "Workflow",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Input",
+              "displayName": "Input",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Output",
+              "displayName": "Output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Actions",
+              "displayName": "Actions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Token",
+              "displayName": "Token",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total tokens",
+              "displayName": "Total tokens",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1472,
+        960
+      ],
+      "id": "098df115-d4e1-4884-aa9f-2e814eddd9d2",
+      "name": "Agent Log",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "k9q7ceY6SMWzzelv",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "=# ⚠️ QUY TẮC BẮT BUỘC - ĐỌC TRƯỚC KHI TRẢ LỜI\n\n## QUAN TRỌNG NHẤT: KHI TẠO BÁO GIÁ\nKhi sếp yêu cầu \"tạo báo giá\", \"lập báo giá\", \"tạo lại báo giá\", \"làm báo giá\", \"báo giá cho khách\", \"tính giá\", \"lên đơn\":\n→ PHẢI trả về JSON `create_quote` ở cuối response\n→ KHÔNG ĐƯỢC chỉ trả lời text mô tả mà thiếu JSON\n→ Nếu thiếu JSON → File báo giá KHÔNG được tạo!\n\n---\n\n# OVERVIEW\nBạn là Trợ lý Kế toán chuyên trách của xưởng nội thất MinhKhoa.\n\n# CONTEXT\n{{ $json.customerContext }}\n{{ $json.learningContext }}\n\n# TOOLS & RULES\n1. Calculator: BẮT BUỘC dùng để tính toán mọi con số. KHÔNG tính nhẩm.\n2. Tra cứu: Dùng tools (San pham, Vat lieu, Ton kho) để lấy dữ liệu.\n\n# OUTPUT FORMAT\n1. Lời thoại:\n   - Text thuần, KHÔNG dùng markdown (**, ##, ```)\n   - Xưng hô: \"em\" - \"sếp\"\n   - Số tiền: dấu chấm phân cách (1.500.000 VNĐ)\n\n2. JSON Action: Đặt ở CUỐI CÙNG response khi cần hành động\n\n---\n\n# ACTION SCENARIOS\n\n## 1. TẠO BÁO GIÁ MỚI\nTừ khóa: \"tạo báo giá\", \"lập báo giá\", \"tạo lại\", \"làm báo giá\", \"báo giá cho\", \"tính giá\", \"lên đơn\"\n\nQuy trình:\n1. Dùng Calculator tính toán\n2. Trả lời ngắn: \"Dạ, em đã tính xong báo giá cho [Tên khách]. Tổng cộng: X VNĐ\"\n3. ĐÍNH KÈM JSON (BẮT BUỘC):\n\n```json\n{\n  \"action\": \"create_quote\",\n  \"data\": {\n    \"customerName\": \"Tên khách\",\n    \"customerPhone\": \"SĐT\",\n    \"customerAddress\": \"Địa chỉ\",\n    \"items\": [\n      {\n        \"name\": \"Tên sản phẩm\",\n        \"size\": \"1800 x 2000 x 600 mm\",\n        \"material\": \"Vật liệu\",\n        \"quantity\": 1,\n        \"unitPrice\": 1000000,\n        \"amount\": 1000000,\n        \"note\": \"Ghi chú\"\n      }\n    ],\n    \"subtotal\": 1000000,\n    \"profitPercent\": 25,\n    \"profit\": 250000,\n    \"priceBeforeVAT\": 1250000,\n    \"vat\": 125000,\n    \"totalAmount\": 1375000\n  }\n}\n```\n\nGiải thích fields:\n- unitPrice = Giá bán 1 sản phẩm (đã tính lợi nhuận, CHƯA VAT)\n- amount = unitPrice × quantity\n- subtotal = Tổng chi phí sản xuất (chưa lợi nhuận)\n- profit = subtotal × profitPercent / 100\n- priceBeforeVAT = subtotal + profit\n- vat = priceBeforeVAT × 10%\n- totalAmount = priceBeforeVAT + vat\n- Tất cả số tiền là NUMBER, không có dấu chấm\n\n## 2. GỬI LẠI PDF/FILE\nTừ khóa: \"gửi pdf\", \"gửi lại file\", \"tải pdf\", \"mỗi pdf\", \"chỉ cần file\"\n\n→ CHỈ trả về: \"Đây là file PDF báo giá [mã]: [link_pdf]\"\n→ KHÔNG tạo báo giá mới\n→ KHÔNG mô tả chi tiết\n\n## 3. HỎI ĐÁP THÔNG THƯỜNG\nTừ khóa: hỏi giá vật liệu, tra cứu sản phẩm, tồn kho...\n\n→ Trả lời text bình thường\n→ KHÔNG cần JSON\n\n## 4. LƯU THÔNG TIN HỌC\nKhi sếp dạy kiến thức mới hoặc sửa sai\n\n```json\n{\n  \"action\": \"learn\",\n  \"data\": {\n    \"type\": \"knowledge|preference|correction\",\n    \"content\": \"Nội dung học\",\n    \"wrong\": \"Nếu là correction - cái sai\",\n    \"correct\": \"Nếu là correction - cái đúng\"\n  }\n}\n```\n\n## 5. LƯU KHÁCH HÀNG\nKhi có thông tin khách hàng mới\n\n```json\n{\n  \"action\": \"save_customer\",\n  \"data\": {\n    \"name\": \"Tên khách\",\n    \"phone\": \"SĐT\",\n    \"address\": \"Địa chỉ\",\n    \"email\": \"Email\"\n  }\n}\n```\n\n---\n\n# VÍ DỤ RESPONSE ĐÚNG\n\n## Ví dụ 1: Tạo báo giá\nUser: \"Tạo báo giá cho khách Nguyễn Văn A, 2 tủ quần áo 3 cánh\"\n\nResponse:\nDạ, em đã tính xong báo giá cho khách Nguyễn Văn A. Tổng cộng là 15.125.000 VNĐ (đã bao gồm VAT 10%).\n\n```json\n{\n  \"action\": \"create_quote\",\n  \"data\": {\n    \"customerName\": \"Nguyễn Văn A\",\n    \"customerPhone\": \"Chưa cung cấp\",\n    \"customerAddress\": \"Chưa cung cấp\",\n    \"items\": [\n      {\n        \"name\": \"Tủ quần áo 3 cánh\",\n        \"size\": \"1800 x 2200 x 600 mm\",\n        \"material\": \"Gỗ công nghiệp MDF\",\n        \"quantity\": 2,\n        \"unitPrice\": 5500000,\n        \"amount\": 11000000,\n        \"note\": \"\"\n      }\n    ],\n    \"subtotal\": 8800000,\n    \"profitPercent\": 25,\n    \"profit\": 2200000,\n    \"priceBeforeVAT\": 11000000,\n    \"vat\": 1100000,\n    \"totalAmount\": 12100000\n  }\n}\n```\n\n## Ví dụ 2: Gửi lại PDF\nUser: \"Gửi lại mỗi pdf thôi\"\n\nResponse:\nĐây là file PDF báo giá BG-20251220-123: https://res.cloudinary.com/.../BG-20251220-123.pdf\n\n## Ví dụ 3: Hỏi đáp\nUser: \"Giá gỗ sồi bao nhiêu?\"\n\nResponse:\nDạ, giá gỗ sồi hiện tại là 15.000.000 VNĐ/m3 ạ.\n\n---\n\n# LƯU Ý CUỐI\n- LUÔN dùng Calculator khi tính toán\n- LUÔN đính kèm JSON khi tạo báo giá\n- KHÔNG dùng markdown trong text\n- JSON phải ở CUỐI CÙNG response\n- Số trong JSON là NUMBER (không có dấu chấm)\n- Số trong text là STRING (có dấu chấm: 1.500.000)",
+        "workflowId": {
+          "__rl": true,
+          "value": "2AKCYsUUcOUMdi4M",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/2AKCYsUUcOUMdi4M",
+          "cachedResultName": "Tro ly ke toan"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "prompt": "={{ $json.prompt }}",
+            "type": "={{ $json.type }}",
+            "content": "={{ $json.content }}",
+            "metadata": "={{ $json.metadata }}",
+            "imageUrl": "={{ $json.imageUrl }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "prompt",
+              "displayName": "prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "type",
+              "displayName": "type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "content",
+              "displayName": "content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "metadata",
+              "displayName": "metadata",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "imageUrl",
+              "displayName": "imageUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        80,
+        1648
+      ],
+      "id": "8ca325d7-83c6-4c81-a888-6c7284ce9c4d",
+      "name": "Tro ly ke toan"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "text": "Đây là ảnh gi?",
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        -2512,
+        1152
+      ],
+      "id": "86ee7269-65d0-4c60-aac1-7ef5341a655a",
+      "name": "Analyze an image",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ivMQFozfvyKtTYit",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "dd907e87-49ce-4525-862c-54059820173b",
+              "leftValue": "={{ $('chat_bot').first().json.body.message.caption || $json.caption || '' }}",
+              "rightValue": "phân tích",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "d22d6c30-11fb-4d49-a43a-ee458ac670f7",
+              "leftValue": "={{ $('chat_bot').first().json.body.message.caption || $json.caption || '' }}",
+              "rightValue": "xem",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "7ce92bce-4a09-477f-905c-dccb07e5e129",
+              "leftValue": "={{ $('chat_bot').first().json.body.message.caption || $json.caption || '' }}",
+              "rightValue": "đọc",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "f420f5d0-2c66-42b8-8647-6c342f306b59",
+              "leftValue": "={{ $('chat_bot').first().json.body.message.caption || $json.caption || '' }}",
+              "rightValue": "analyze",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "e5b80510-f153-43cd-8cb7-5da472023b88",
+              "leftValue": "={{ $('chat_bot').first().json.body.message.caption || $json.caption || '' }}",
+              "rightValue": "=mô tả",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "25a3e8c6-d7ae-4f20-8983-aee8a72e6449",
+              "leftValue": "={{ $('chat_bot').first().json.body.message.caption || $json.caption || '' }}",
+              "rightValue": "là gì",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -2784,
+        1232
+      ],
+      "id": "bab906e0-5ddb-4c99-87b4-6d4dacd01d8c",
+      "name": "Check Caption Analyze"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('chat_bot').item.json.body.message.from.id }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -3216,
+        1488
+      ],
+      "id": "749722a0-9c52-4b15-a559-c6bc1aeac4ad",
+      "name": "Download Documents",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const longText = $('Tro ly chinh').first().json.output || \"\"; \nconst limit = 1900; \n\nconst chunks = [];\nfor (let i = 0; i < longText.length; i += limit) {\n  chunks.push({\n    json: {\n      message_part: longText.substring(i, i + limit)\n    }\n  });\n}\n\nreturn chunks;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        400
+      ],
+      "id": "44b37d89-6893-4b40-af9d-caa4fabe2615",
+      "name": "Split Response"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -3952,
+        2288
+      ],
+      "id": "7b750ef7-7ce8-42ee-afb7-6c00cb118542",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ivMQFozfvyKtTYit",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://bot-api.zaloplatforms.com/bot3560693075024509922:IRydnWGAAtlekyTBevNhCHkSOOsuCWvBMphBNeSurWcpTbkMgRSRTpvKJbWMWbYX/sendChatAction",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $json.body.message.chat.id }}"
+            },
+            {
+              "name": "action",
+              "value": "typing"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -4032,
+        1104
+      ],
+      "id": "44017e9a-b4d0-49ff-a1ec-ae7942103f33",
+      "name": "Send Processing Message"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://bot-api.zaloplatforms.com/bot3560693075024509922:IRydnWGAAtlekyTBevNhCHkSOOsuCWvBMphBNeSurWcpTbkMgRSRTpvKJbWMWbYX/setWebhook",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "url",
+              "value": "https://n8n.minhkhoaagent.top/webhook/2c429418-efa2-4357-ba0a-c02758bbd000"
+            },
+            {
+              "name": "secret_token",
+              "value": "12345678"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -4192,
+        2032
+      ],
+      "id": "780f2705-7894-4004-ac77-b4a68c04eb44",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://bot-api.zapps.me/bot3560693075024509922:IRydnWGAAtlekyTBevNhCHkSOOsuCWvBMphBNeSurWcpTbkMgRSRTpvKJbWMWbYX/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $('chat_bot').item.json.body.message.chat.id }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.error }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -2144,
+        1792
+      ],
+      "id": "54025e32-52a0-42a5-a915-bbe089fd066c",
+      "name": "Error Message"
+    },
+    {
+      "parameters": {
+        "description": "Gọi công cụ này khi sếp DẠY kiến thức mới, SỬA SAI, hoặc bảo GHI NHỚ thông tin. \nVí dụ: \"Nhớ là giá gỗ sồi 15 triệu/m3\", \"Sai rồi, phải là...\", \"Ghi nhớ khách A thích màu trắng\"\nInput: Nội dung cần ghi nhớ (text)",
+        "workflowId": {
+          "__rl": true,
+          "value": "BKK33Pu7stWD1pR1",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/BKK33Pu7stWD1pR1",
+          "cachedResultName": "Tool - RAG Knowledge"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "query": "={{ $json.query }}",
+            "action": "search"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "query",
+              "displayName": "query",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        592,
+        1648
+      ],
+      "id": "45164847-5d54-4d49-932b-6b2d6bb5685e",
+      "name": "Save Knowledge (Write)"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.responseType }}",
+                    "rightValue": "quote_new",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Quote New"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.responseType }}",
+                    "rightValue": "send_pdf",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Send PDF"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.responseType }}",
+                    "rightValue": "send_image",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Send Image"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -336,
+        208
+      ],
+      "id": "e7277490-3f42-47a7-b005-d6b5bfc8fd42",
+      "name": "Response Type"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://bot-api.zaloplatforms.com/bot3560693075024509922:IRydnWGAAtlekyTBevNhCHkSOOsuCWvBMphBNeSurWcpTbkMgRSRTpvKJbWMWbYX/sendPhoto",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $('chat_bot').first().json.body.message.chat.id }}"
+            },
+            {
+              "name": "photo",
+              "value": "={{ $json.imageUrl }}"
+            },
+            {
+              "name": "caption",
+              "value": "=📋 Báo giá {{ $json.quoteNumber }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "93679a97-45d2-4a71-914b-a963eca4e84c",
+      "name": "SendPhoto (Quote)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://bot-api.zaloplatforms.com/bot3560693075024509922:IRydnWGAAtlekyTBevNhCHkSOOsuCWvBMphBNeSurWcpTbkMgRSRTpvKJbWMWbYX/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $('chat_bot').first().json.body.message.chat.id }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ 'Sếp ơi, em đã tạo báo giá ' + $('Extract Quote Data').first().json.quoteNumber + ' xong ạ!\\n\\n📋 Chi tiết trong ảnh phía trên.' + ($('Extract Quote Data').first().json.pdfUrl ? '\\n\\n📄 Tải PDF: ' + $('Extract Quote Data').first().json.pdfUrl : '\\n\\nNếu cần file PDF, sếp báo em nhé!') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        224,
+        0
+      ],
+      "id": "8442c143-9e93-43aa-a0b1-e417b3f3125b",
+      "name": "SendMessage (After Photo)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://bot-api.zaloplatforms.com/bot3560693075024509922:IRydnWGAAtlekyTBevNhCHkSOOsuCWvBMphBNeSurWcpTbkMgRSRTpvKJbWMWbYX/sendSticker",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $('chat_bot').first().json.body.message.chat.id }}"
+            },
+            {
+              "name": "sticker",
+              "value": "442d73e94faca6f2ffbd"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        448,
+        0
+      ],
+      "id": "6a144b08-1c98-41c9-97e4-de1be4d4003b",
+      "name": "SendSticker (Success)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://bot-api.zaloplatforms.com/bot3560693075024509922:IRydnWGAAtlekyTBevNhCHkSOOsuCWvBMphBNeSurWcpTbkMgRSRTpvKJbWMWbYX/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $('chat_bot').first().json.body.message.chat.id }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ 'Dạ, đây là file PDF báo giá ' + $json.quoteNumber + ':\\n\\n📄 ' + $json.pdfUrl }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        0,
+        160
+      ],
+      "id": "0ffa2306-57e9-4250-b73c-5bd3528ff397",
+      "name": "SendMessage (PDF Only)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://bot-api.zaloplatforms.com/bot${BOT_TOKEN}/sendPhoto",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $('chat_bot').first().json.body.message.chat.id }}"
+            },
+            {
+              "name": "photo",
+              "value": "={{ $json.imageUrl }}"
+            },
+            {
+              "name": "caption",
+              "value": "=📋 Ảnh báo giá {{ $json.quoteNumber }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        0,
+        320
+      ],
+      "id": "cd9484f9-0d2f-45de-a59e-b2ca12c4eb41",
+      "name": "SendPhoto (Image Only)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://bot-api.zaloplatforms.com/bot3560693075024509922:IRydnWGAAtlekyTBevNhCHkSOOsuCWvBMphBNeSurWcpTbkMgRSRTpvKJbWMWbYX/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $('chat_bot').first().json.body.message.chat.id }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        0,
+        480
+      ],
+      "id": "aaec327e-c3e2-499d-9dae-4b4019882b84",
+      "name": "SendMessage (Text Only)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\n\nlet output = item.output || item.message_part || '';\nconst cleanOutput = output.replace(/\\\\n/g, ' ').replace(/\\n/g, ' ');\n\nlet imageUrl = '';\nlet pdfUrl = '';\nlet quoteNumber = '';\nlet responseType = 'text_only';\n\n// Tìm URLs\nconst imgMatch = cleanOutput.match(/https:\\/\\/res\\.cloudinary\\.com\\/[^\\s\"<>]+\\.(png|jpg|jpeg)/i);\nif (imgMatch) {\n  imageUrl = imgMatch[0].trim();\n}\n\nconst pdfMatch = cleanOutput.match(/https:\\/\\/res\\.cloudinary\\.com\\/[^\\s\"<>]+\\.pdf/i);\nif (pdfMatch) {\n  pdfUrl = pdfMatch[0].trim();\n}\n\n// Tìm quoteNumber\nconst qnMatch = cleanOutput.match(/BG-\\d{8}-\\d{3}/);\nif (qnMatch) {\n  quoteNumber = qnMatch[0];\n}\n\n// Detect response type - ƯU TIÊN THEO THỨ TỰ\nconst outputLower = output.toLowerCase();\n\n// 1. SEND_PDF: Có PDF link + text phù hợp\nif (pdfUrl && (\n    outputLower.includes('đây là file pdf') || \n    outputLower.includes('đây là pdf') || \n    outputLower.includes('file pdf báo giá') ||\n    outputLower.includes('tải pdf') ||\n    outputLower.includes('link pdf') ||\n    (outputLower.includes('pdf') && !outputLower.includes('tạo báo giá'))\n)) {\n  responseType = 'send_pdf';\n}\n// 2. SEND_IMAGE: Có Image link + text phù hợp (không có PDF)\nelse if (imageUrl && !pdfUrl && (\n    outputLower.includes('đây là ảnh') || \n    outputLower.includes('ảnh báo giá')\n)) {\n  responseType = 'send_image';\n}\n// 3. QUOTE_NEW: Có Image + text tạo mới\nelse if (imageUrl && (\n    outputLower.includes('đã tạo báo giá') || \n    outputLower.includes('em đã lập báo giá') ||\n    outputLower.includes('tạo báo giá') ||\n    outputLower.includes('báo giá mới')\n)) {\n  responseType = 'quote_new';\n}\n// 4. TEXT_ONLY: Mặc định\nelse {\n  responseType = 'text_only';\n}\n\n// Cắt ngắn output\nlet shortOutput = output;\nif (output.length > 1900) {\n  shortOutput = output.substring(0, 1900) + '...';\n}\n\n// Debug log\nconsole.log('Response Type:', responseType);\nconsole.log('PDF URL:', pdfUrl);\nconsole.log('Image URL:', imageUrl);\n\nreturn [{\n  json: {\n    output: shortOutput,\n    imageUrl: imageUrl,\n    pdfUrl: pdfUrl,\n    quoteNumber: quoteNumber,\n    responseType: responseType\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -544,
+        240
+      ],
+      "id": "c0d8cd2b-5d65-46eb-9e81-0efc6014b6f4",
+      "name": "Extract Quote Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\n\n// 1. Lấy output thô từ AI\nlet rawOutput = item.output || item.message_part || '';\n// Clean text (xóa xuống dòng thừa)\nconst cleanOutput = rawOutput.replace(/\\\\n/g, ' ').replace(/\\n/g, ' ');\n\n// 2. Tìm URLs (Bắt mọi loại link http/https kết thúc bằng đuôi file)\nlet imageUrl = '';\nlet pdfUrl = '';\nlet quoteNumber = '';\n\n// Regex tìm ảnh (jpg, png, jpeg, webp) - Không giới hạn domain\nconst imgMatch = cleanOutput.match(/(https?:\\/\\/[^\\s\"<>)]+?\\.(?:png|jpg|jpeg|webp))/i);\nif (imgMatch) imageUrl = imgMatch[0].trim();\n\n// Regex tìm PDF - Không giới hạn domain\nconst pdfMatch = cleanOutput.match(/(https?:\\/\\/[^\\s\"<>)]+?\\.pdf)/i);\nif (pdfMatch) pdfUrl = pdfMatch[0].trim();\n\n// Regex tìm Mã báo giá (Ví dụ: BG-2024...)\nconst qnMatch = cleanOutput.match(/(BG-\\d{8}-\\d{3}|QT-\\d{8}-\\d{3})/i);\nif (qnMatch) quoteNumber = qnMatch[0];\n\n// 3. XỬ LÝ RESPONSE TYPE\nlet responseMode = 'text_only'; // Mặc định\nlet finalText = rawOutput;\n\n// Tìm thẻ RESPONSE_TYPE do Prompt sinh ra\nconst typeMatch = rawOutput.match(/RESPONSE_TYPE:\\s*[\"']?([a-zA-Z_]+)[\"']?/i);\n\nif (typeMatch) {\n    const typeFromAI = typeMatch[1].toLowerCase();\n    \n    // Map logic\n    if (typeFromAI.includes('quote_new') || typeFromAI.includes('all')) {\n        responseMode = 'all'; \n    } else if (typeFromAI.includes('send_pdf')) {\n        responseMode = 'pdf';\n    } else if (typeFromAI.includes('send_image')) {\n        responseMode = 'image';\n    } else {\n        responseMode = 'text';\n    }\n\n    // Xóa dòng RESPONSE_TYPE khỏi tin nhắn để đẹp\n    finalText = rawOutput.replace(/RESPONSE_TYPE:\\s*[\"']?[a-zA-Z_]+[\"']?/gi, '').trim();\n} else {\n    // FALLBACK: Nếu AI quên gắn thẻ, tự đoán dựa trên việc có link hay không\n    if (imageUrl && pdfUrl) {\n        responseMode = 'all';\n    } else if (pdfUrl) {\n        // Nếu có PDF mà trong text có từ khóa 'ảnh', 'hình' -> có thể là all\n        if (rawOutput.toLowerCase().includes('ảnh') || rawOutput.toLowerCase().includes('hình')) {\n             responseMode = 'all';\n        } else {\n             responseMode = 'pdf';\n        }\n    } else if (imageUrl) {\n        responseMode = 'image';\n    }\n}\n\n// Trả về kết quả\nreturn [{\n    json: {\n        output: finalText,\n        imageUrl: imageUrl,\n        pdfUrl: pdfUrl,\n        quoteNumber: quoteNumber,\n        response_mode: responseMode\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        528,
+        400
+      ],
+      "id": "e4fc9f83-2d82-4683-a030-cd4956922520",
+      "name": "Xử lý Response Type"
+    },
+    {
+      "parameters": {
+        "model": "qwen/qwen3-32b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        1648
+      ],
+      "id": "4b87fea7-b6f2-400d-a882-5839effb666f",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "VkFyanoifIIhja6j",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. LẤY DỮ LIỆU TỪ AGENT\nconst agentItem = $('Tro ly chinh').first().json;\nlet rawOutput = agentItem.output || \"\";\n\n// Clean text\nlet cleanOutput = rawOutput;\nif (cleanOutput) {\n    cleanOutput = cleanOutput.split('\\\\n').join(' ').split('\\n').join(' ');\n}\n\n// 2. KHỞI TẠO BIẾN\nlet imageUrl = '';\nlet pdfUrl = '';\nlet quoteNumber = '';\nlet responseMode = 'text';\n\n// 3. TÌM LINK\n// Regex tìm ảnh\nconst imgRegex = /(https?:\\/\\/[^\\s\"<>)]+?\\.(?:png|jpg|jpeg|webp))/i;\nconst imgMatch = cleanOutput.match(imgRegex);\nif (imgMatch) imageUrl = imgMatch[0].trim();\n\n// Regex tìm PDF\nconst pdfRegex = /(https?:\\/\\/[^\\s\"<>)]+?\\.pdf)/i;\nconst pdfMatch = cleanOutput.match(pdfRegex);\nif (pdfMatch) pdfUrl = pdfMatch[0].trim();\n\n// Regex tìm Mã báo giá\nconst qnRegex = /(BG-\\d{8}-\\d{3}|QT-\\d{8}-\\d{3})/i;\nconst qnMatch = cleanOutput.match(qnRegex);\nif (qnMatch) quoteNumber = qnMatch[0];\n\n// 4. XÁC ĐỊNH CHẾ ĐỘ GỬI - ƯU TIÊN THEO LINK TÌM ĐƯỢC\nif (imageUrl && pdfUrl) {\n    responseMode = 'all';\n} else if (imageUrl) {\n    responseMode = 'image';\n} else if (pdfUrl) {\n    responseMode = 'pdf';\n} else {\n    responseMode = 'text';\n}\n\n// 5. LÀM SẠCH TIN NHẮN\nlet finalText = rawOutput;\n\n// Xóa RESPONSE_TYPE nếu có\nfinalText = finalText.replace(/RESPONSE_TYPE:\\s*[\"']?[a-zA-Z_]+[\"']?/gi, '');\n\n// Xóa link nếu đã gửi riêng\nif (responseMode === 'all' || responseMode === 'image') {\n    if (imageUrl) finalText = finalText.replace(imageUrl, '');\n}\nif (responseMode === 'all' || responseMode === 'pdf') {\n    if (pdfUrl) finalText = finalText.replace(pdfUrl, '');\n}\n\n// Xóa JSON block trong text (giữ text sạch)\nfinalText = finalText.replace(/```json[\\s\\S]*?```/gi, '');\nfinalText = finalText.replace(/\\{[\\s\\S]*?\"action\"[\\s\\S]*?\\}/gi, '');\n\n// Clean up\nfinalText = finalText.replace(/\\n\\s*\\n/g, '\\n').trim();\n\n// Log debug\nconsole.log('Image URL:', imageUrl);\nconsole.log('PDF URL:', pdfUrl);\nconsole.log('Response Mode:', responseMode);\n\nreturn [{\n    json: {\n        output: finalText,\n        imageUrl: imageUrl,\n        pdfUrl: pdfUrl,\n        quoteNumber: quoteNumber,\n        response_mode: responseMode\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        960
+      ],
+      "id": "1c2ddf7b-0d88-4938-aff4-c89cae5919c1",
+      "name": "Analyze and Get link",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://bot-api.zaloplatforms.com/bot3560693075024509922:IRydnWGAAtlekyTBevNhCHkSOOsuCWvBMphBNeSurWcpTbkMgRSRTpvKJbWMWbYX/sendPhoto",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $('chat_bot').first().json.body.message.chat.id }}"
+            },
+            {
+              "name": "photo",
+              "value": "={{ $('Analyze and Get link').first().json.imageUrl }}"
+            },
+            {
+              "name": "caption",
+              "value": "=📋 Báo giá {{ $('Analyze and Get link').first().json.quoteNumber }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2112,
+        800
+      ],
+      "id": "f551212a-973c-4c4d-ac63-2d01ef74c39d",
+      "name": "Send Photo",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-image",
+              "leftValue": "={{ $json.imageUrl }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "check-mode",
+              "leftValue": "={{ $json.response_mode }}",
+              "rightValue": "pdf",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals",
+                "name": "filter.operator.notEquals"
+              }
+            },
+            {
+              "id": "check-mode-text",
+              "leftValue": "={{ $json.response_mode }}",
+              "rightValue": "text",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1904,
+        960
+      ],
+      "id": "de5444e7-9f2a-4953-9f71-d89f2eaa4c60",
+      "name": "Has Image?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-pdf",
+              "leftValue": "={{ $('Analyze and Get link').first().json.pdfUrl }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "check-mode",
+              "leftValue": "={{ $('Analyze and Get link').first().json.response_mode }}",
+              "rightValue": "image",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "check-mode-text",
+              "leftValue": "={{ $('Analyze and Get link').first().json.response_mode }}",
+              "rightValue": "text",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2352,
+        960
+      ],
+      "id": "1fba80f1-a633-44d8-b3f5-d313a6867f59",
+      "name": "Has PDF?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://bot-api.zaloplatforms.com/bot3560693075024509922:IRydnWGAAtlekyTBevNhCHkSOOsuCWvBMphBNeSurWcpTbkMgRSRTpvKJbWMWbYX/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $('chat_bot').first().json.body.message.chat.id }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ '📄 File PDF báo giá ' + $('Analyze and Get link').first().json.quoteNumber + ':\\n' + $('Analyze and Get link').first().json.pdfUrl }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2592,
+        800
+      ],
+      "id": "a56bc1db-c753-4f0b-96ae-614f6e489e39",
+      "name": "Send PDF",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. LẤY DỮ LIỆU\nconst agentItem = $('Tro ly chinh').first().json;\nlet rawOutput = agentItem.output || \"\";\n\n// Clean text\nconst cleanOutput = rawOutput.replace(/\\\\n/g, ' ').replace(/\\n/g, ' ');\n\n// 2. TÌM LINK\nlet imageUrl = '';\nlet pdfUrl = '';\nlet quoteNumber = '';\n\n// Bắt link ảnh\nconst imgMatch = cleanOutput.match(/(https?:\\/\\/[^\\s\"<>)]+?\\.(?:png|jpg|jpeg|webp))/i);\nif (imgMatch) imageUrl = imgMatch[0].trim();\n\n// Bắt link PDF\nconst pdfMatch = cleanOutput.match(/(https?:\\/\\/[^\\s\"<>)]+?\\.pdf)/i);\nif (pdfMatch) pdfUrl = pdfMatch[0].trim();\n\n// Bắt Mã báo giá\nconst qnMatch = cleanOutput.match(/(BG-\\d{8}-\\d{3})/i);\nif (qnMatch) quoteNumber = qnMatch[0];\n\n// 3. XÁC ĐỊNH RESPONSE MODE\nlet responseMode = 'text';\nif (imageUrl && pdfUrl) responseMode = 'all';\nelse if (imageUrl) responseMode = 'image';\nelse if (pdfUrl) responseMode = 'pdf';\n\n// 4. TẠO TIN NHẮN SẠCH\nlet finalText = '';\n\n// Nếu có báo giá (có ảnh hoặc PDF)\nif (responseMode !== 'text' && quoteNumber) {\n    // Tìm tổng tiền trong output\n    const totalMatch = rawOutput.match(/(\\d{1,3}(?:\\.\\d{3})*(?:\\.\\d+)?)\\s*VN[ĐD]/i);\n    const totalAmount = totalMatch ? totalMatch[1] : '';\n    \n    finalText = `Sếp ơi, em đã tạo báo giá ${quoteNumber} xong ạ!`;\n    \n    if (totalAmount) {\n        finalText += `\\n💰 Tổng cộng: ${totalAmount} VNĐ (đã bao gồm VAT 10%)`;\n    }\n    \n    if (pdfUrl) {\n        finalText += `\\n\\n📄 Tải PDF: ${pdfUrl}`;\n    } else {\n        finalText += `\\n\\nNếu cần file PDF, sếp báo em nhé!`;\n    }\n} else {\n    // Không có báo giá - giữ nguyên text nhưng clean\n    finalText = rawOutput\n        .replace(/RESPONSE_TYPE:\\s*[\"']?[a-zA-Z_]+[\"']?/gi, '')\n        .replace(/```json[\\s\\S]*?```/gi, '')\n        .replace(/\\{[\\s\\S]*?\"action\"[\\s\\S]*?\\}/gi, '')\n        .replace(/Link ảnh preview.*?:/gi, '')\n        .replace(/\\n\\s*\\n/g, '\\n')\n        .trim();\n    \n    // Xóa link nếu đã gửi ảnh riêng\n    if (imageUrl) finalText = finalText.replace(imageUrl, '');\n    if (pdfUrl) finalText = finalText.replace(pdfUrl, '');\n}\n\n// Clean final\nfinalText = finalText.replace(/\\n\\s*\\n\\s*\\n/g, '\\n\\n').trim();\n\nreturn [{\n    json: {\n        output: finalText,\n        imageUrl: imageUrl,\n        pdfUrl: pdfUrl,\n        quoteNumber: quoteNumber,\n        response_mode: responseMode\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2832,
+        960
+      ],
+      "id": "0bb4f837-6ba9-407b-9680-9f0b9a561e91",
+      "name": "Split Text"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://bot-api.zaloplatforms.com/bot3560693075024509922:IRydnWGAAtlekyTBevNhCHkSOOsuCWvBMphBNeSurWcpTbkMgRSRTpvKJbWMWbYX/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $('chat_bot').first().json.body.message.chat.id }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3056,
+        960
+      ],
+      "id": "8715eaf5-b63c-4227-b285-56491ce57c90",
+      "name": "Send Text"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all items from input\nconst inputItems = $input.all();\n\nfor (let i = 0; i < inputItems.length; i++) {\n  const item = inputItems[i];\n  \n  // Lấy photo_url từ chat_bot\n  try {\n    const chatBotData = $('chat_bot').first().json;\n    item.json.photo_url = chatBotData?.body?.message?.photo_url || '';\n  } catch (e) {\n    item.json.photo_url = '';\n  }\n\n  // Fix MIME type nếu cần\n  if (item.binary && item.binary.data) {\n    if (item.binary.data.mimeType === 'image/jpg') {\n      item.binary.data.mimeType = 'image/jpeg';\n      item.binary.data.fileExtension = 'jpeg';\n    }\n  }\n}\n\nreturn inputItems;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2992,
+        1232
+      ],
+      "id": "2c68280b-8e71-400d-8410-1f783e9c22c8",
+      "name": "Fix Input Item",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://bot-api.zaloplatforms.com/bot3560693075024509922:IRydnWGAAtlekyTBevNhCHkSOOsuCWvBMphBNeSurWcpTbkMgRSRTpvKJbWMWbYX/sendChatAction",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $('chat_bot').item.json.body.message.from.id }}"
+            },
+            {
+              "name": "action",
+              "value": "typing"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1120,
+        960
+      ],
+      "id": "acef9044-4db8-4620-811d-4561eee3c875",
+      "name": "Send Processing Message2",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -3792,
+        2288
+      ],
+      "id": "33ab3fa4-93f3-4404-a053-4e8afa010f8b",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "ZeYl5rYP7Kr1YqY6",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge knowledge context vào input cho Workflow chính\nconst prepareData = $('Prepare Smart Search').first().json;\nconst originalInput = prepareData.originalInput;\n\n// 1. RAG Results\nlet ragContext = '';\ntry {\n  const searchResult = $('Search Knowledge').first().json;\n  if (searchResult && searchResult.success && searchResult.results && searchResult.results.length > 0) {\n    ragContext = searchResult.results\n      .map(r => `• [${r.category}] ${r.content}`)\n      .join('\\n');\n  }\n} catch (e) {\n  ragContext = '';\n}\n\n// 2. Tavily Results (nếu có)\nlet webContext = '';\ntry {\n  if (prepareData.needWebSearch) {\n    const tavilyResult = $('Search Tavily').first().json;\n    if (tavilyResult && tavilyResult.answer) {\n      webContext = `Tóm tắt: ${tavilyResult.answer}\\n`;\n    }\n    if (tavilyResult && tavilyResult.results && tavilyResult.results.length > 0) {\n      webContext += tavilyResult.results\n        .slice(0, 3)\n        .map(r => `• ${r.title}: ${r.content.substring(0, 200)}...`)\n        .join('\\n');\n    }\n  }\n} catch (e) {\n  webContext = '';\n}\n\n// 3. Build context\nlet learningContext = '';\n\nif (ragContext) {\n  learningContext += `\n=== KIẾN THỨC ĐÃ HỌC ===\n${ragContext}\n========================\n`;\n}\n\nif (webContext) {\n  learningContext += `\n=== THÔNG TIN TỪ WEB ===\n${webContext}\n========================\n`;\n}\n\nreturn [{\n  json: {\n    ...originalInput,\n    learningContext: learningContext,\n    hasLearning: ragContext !== '' || webContext !== ''\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -384,
+        1056
+      ],
+      "id": "97926d19-60c5-4822-b3f7-6089e778f041",
+      "name": "Merge Context"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "BKK33Pu7stWD1pR1",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/BKK33Pu7stWD1pR1",
+          "cachedResultName": "Tool - RAG Knowledge"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "query": "={{ $json.ragQuery || $json.content || $json.prompt || '' }}",
+            "action": "search"
+          },
+          "matchingColumns": [
+            "query"
+          ],
+          "schema": [
+            {
+              "id": "query",
+              "displayName": "query",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -1440,
+        1056
+      ],
+      "id": "8910b538-549d-4b1a-b325-7e70b5a36496",
+      "name": "Search Knowledge"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Chuẩn bị search từ nhiều nguồn cho Workflow chính\nconst input = $input.first().json;\n\n// Lấy query từ nhiều nguồn có thể\nconst query = input.content || input.prompt || input.text || '';\nconst queryLower = query.toLowerCase();\n\n// Phân tích intent - có cần web search không?\nlet needWebSearch = false;\nlet webSearchQuery = '';\nlet searchType = 'general';\n\nif (queryLower.includes('giá thị trường') || queryLower.includes('giá hiện tại') || \n    queryLower.includes('xu hướng') || queryLower.includes('mới nhất') ||\n    queryLower.includes('tin tức') || queryLower.includes('thời sự')) {\n  needWebSearch = true;\n  webSearchQuery = query + ' Việt Nam 2025';\n  searchType = 'market_info';\n}\n\nif (queryLower.includes('đối thủ') || queryLower.includes('thị trường') ||\n    queryLower.includes('so sánh')) {\n  needWebSearch = true;\n  webSearchQuery = query + ' nội thất Việt Nam';\n  searchType = 'competitor';\n}\n\nreturn [{\n  json: {\n    originalInput: input,\n    ragQuery: query,\n    needWebSearch: needWebSearch,\n    webSearchQuery: webSearchQuery,\n    searchType: searchType\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1664,
+        1056
+      ],
+      "id": "2dd61173-a310-4102-a5b2-d1b42b9976b4",
+      "name": "Prepare Smart Search"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "06b6aed4-daf6-46d1-a841-394b9ffde6ea",
+              "leftValue": "={{ $('Prepare Smart Search').item.json.needWebSearch }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1232,
+        1056
+      ],
+      "id": "0a6e2455-5765-4c35-bcf3-b7fd98cc173b",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Detect knowledge mới cần học\nlet agentOutput = '';\nlet userInput = '';\n\ntry {\n  agentOutput = $('Tro ly chinh').first().json.output || '';\n} catch (e) {\n  agentOutput = '';\n}\n\ntry {\n  userInput = $('Input').first().json.content || \n              $('Input').first().json.prompt || \n              $('chat_bot').first().json.body?.message?.text || '';\n} catch (e) {\n  userInput = '';\n}\n\n// Patterns cần học\nconst learnPatterns = [\n  { pattern: /nhớ (là|rằng|nhé)/i, category: 'knowledge' },\n  { pattern: /ghi nhớ/i, category: 'knowledge' },\n  { pattern: /từ (giờ|nay)/i, category: 'preference' },\n  { pattern: /quy định (mới|là)/i, category: 'process' },\n  { pattern: /sai rồi.*(đúng là|phải là)/i, category: 'correction' },\n  { pattern: /không phải.*(mà là|là)/i, category: 'correction' }\n];\n\nlet shouldLearn = false;\nlet category = 'general';\nlet contentToLearn = userInput;\n\nfor (const item of learnPatterns) {\n  if (item.pattern.test(userInput)) {\n    shouldLearn = true;\n    category = item.category;\n    break;\n  }\n}\n\n// Nếu agent xác nhận đã học\nif (agentOutput.toLowerCase().includes('đã ghi nhớ') || \n    agentOutput.toLowerCase().includes('em nhớ rồi')) {\n  shouldLearn = true;\n}\n\nreturn [{\n  json: {\n    shouldLearn: shouldLearn,\n    contentToLearn: contentToLearn,\n    category: category\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        960
+      ],
+      "id": "4b115fc5-3497-4baf-8db5-64ee7f341f13",
+      "name": "Detect New Knowledge"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "cbc74e48-ef2f-455d-8326-3aa17e03042c",
+              "leftValue": "={{ $json.shouldLearn }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        656,
+        960
+      ],
+      "id": "04cbed27-5346-4281-9290-95f95a1f1e65",
+      "name": "If Should Learn"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "x2L5rQZ1DPGBD6zJ",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/x2L5rQZ1DPGBD6zJ",
+          "cachedResultName": "Tool - RAG Knowledge"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "query": "={{ $json.query }}",
+            "action": "save",
+            "category": "={{ $json.category }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "query",
+              "displayName": "query",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        880,
+        864
+      ],
+      "id": "2c47882e-91ec-4d7b-beaf-60f0997672fa",
+      "name": "Execute Save to RAG"
+    },
+    {
+      "parameters": {
+        "query": "={{ $('Prepare Smart Search').item.json.webSearchQuery }}",
+        "options": {
+          "search_depth": "basic",
+          "max_results": 5,
+          "include_answer": "advanced"
+        }
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavily",
+      "typeVersion": 1,
+      "position": [
+        -1024,
+        960
+      ],
+      "id": "b3ccc7ec-e1e5-4c1a-bfd9-2538bc8dbe02",
+      "name": "Search Tavily",
+      "credentials": {
+        "tavilyApi": {
+          "id": "pY0x9kpc8XPIIprO",
+          "name": "Tavily account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const queryHash = prepareData.webSearchQuery\n  .toLowerCase()\n  .replace(/[^a-z0-9]/g, '')\n  .substring(0, 50);\n\n// Thêm vào return\nreturn [{\n  json: {\n    shouldSave: shouldSave,\n    contentToSave: contentToSave,\n    category: category,\n    queryHash: queryHash,  // Dùng để check trùng sau này\n    originalQuery: prepareData.webSearchQuery,\n    answerLength: tavilyResult?.answer?.length || 0\n  }\n}];\n\n// Kiểm tra chất lượng kết quả Tavily để quyết định có lưu không\nconst tavilyResult = $input.first().json;\nconst prepareData = $('Prepare Smart Search').first().json;\n\nlet shouldSave = false;\nlet contentToSave = '';\nlet category = 'market_info';\n\n// Kiểm tra có answer chất lượng không\nif (tavilyResult && tavilyResult.answer && tavilyResult.answer.length > 100) {\n  shouldSave = true;\n  \n  // Tạo content có cấu trúc để lưu\n  const timestamp = new Date().toISOString().slice(0, 10);\n  contentToSave = `[WEB ${timestamp}] ${prepareData.webSearchQuery}: ${tavilyResult.answer}`;\n  \n  // Phân loại category dựa trên query\n  const queryLower = prepareData.webSearchQuery.toLowerCase();\n  if (queryLower.includes('giá') || queryLower.includes('chi phí')) {\n    category = 'market_price';\n  } else if (queryLower.includes('xu hướng') || queryLower.includes('trend')) {\n    category = 'market_trend';\n  } else if (queryLower.includes('đối thủ') || queryLower.includes('cạnh tranh')) {\n    category = 'competitor';\n  } else {\n    category = 'market_info';\n  }\n}\n\n// Không lưu nếu kết quả quá ngắn hoặc không có answer\nif (tavilyResult.answer && tavilyResult.answer.length < 50) {\n  shouldSave = false;\n}\n\nreturn [{\n  json: {\n    shouldSave: shouldSave,\n    contentToSave: contentToSave,\n    category: category,\n    originalQuery: prepareData.webSearchQuery,\n    answerLength: tavilyResult?.answer?.length || 0\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -816,
+        960
+      ],
+      "id": "0e9e6c56-4c9a-4625-a9a8-95e3be82b9e7",
+      "name": "Check Tavily Quality"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c5512534-5da6-4804-ba93-2cd832aff8a4",
+              "leftValue": "={{ $json.shouldSave }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -608,
+        960
+      ],
+      "id": "1ef3421e-85c6-4628-8cfb-6f466a97b4ed",
+      "name": "If Good Result"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "x2L5rQZ1DPGBD6zJ",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/x2L5rQZ1DPGBD6zJ",
+          "cachedResultName": "Tool - RAG Knowledge"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "query": "={{ $json.contentToSave }}",
+            "action": "save",
+            "category": "={{ $json.category }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "query",
+              "displayName": "query",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -384,
+        864
+      ],
+      "id": "473fdabd-0d02-4350-aa9b-b92121616c2a",
+      "name": "Auto Save Web Knowledge"
+    },
+    {
+      "parameters": {
+        "jsCode": "const saveResult = $input.first().json;\n\nconsole.log('=== AUTO SAVE WEB KNOWLEDGE ===');\nconsole.log('Saved:', saveResult.success ? 'YES' : 'NO');\nconsole.log('Content:', saveResult.message || 'N/A');\n\nreturn [{ json: { logged: true } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -176,
+        864
+      ],
+      "id": "c23dc645-cb2f-480a-80a1-fb8eb010e0ac",
+      "name": "Log Save Result"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Tìm kiếm thông tin MỚI NHẤT trên internet. Sử dụng khi:\n- Sếp hỏi giá thị trường, giá ngoài, giá hiện tại\n- Cần thông tin đối thủ cạnh tranh\n- Cần xu hướng nội thất mới nhất\n- Cần tin tức ngành\n- Cần thông tin công ty hoặc khách hàng\n- Bất kỳ thông tin nào cần cập nhật real-time\n\nKHÔNG dùng cho giá của xưởng MinhKhoa, dùng kiến thức đã học thay thế.",
+        "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Query', ``, 'string') }}",
+        "options": {
+          "search_depth": "advanced",
+          "max_results": 5,
+          "include_answer": "advanced"
+        }
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavilyTool",
+      "typeVersion": 1,
+      "position": [
+        752,
+        1648
+      ],
+      "id": "c7625f01-4b70-4db0-941b-f75da63aa5f1",
+      "name": "Search in Tavily",
+      "credentials": {
+        "tavilyApi": {
+          "id": "pY0x9kpc8XPIIprO",
+          "name": "Tavily account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"status\": \"ok\"}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -3824,
+        1104
+      ],
+      "id": "6214d70c-a177-472b-af6c-3ebfd4771d0b",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "Tro ly chinh",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MongoDB Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Tro ly chinh",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Up": {
+      "main": [
+        [
+          {
+            "node": "Agent Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Download Voice",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Input",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Download Image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Download Documents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input": {
+      "main": [
+        [
+          {
+            "node": "Prepare Smart Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe a recording": {
+      "main": [
+        [
+          {
+            "node": "Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tro ly Email": {
+      "ai_tool": [
+        [
+          {
+            "node": "Tro ly chinh",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tro ly chinh": {
+      "main": [
+        [
+          {
+            "node": "Detect New Knowledge",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tro ly lich": {
+      "ai_tool": [
+        [
+          {
+            "node": "Tro ly chinh",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tro ly ky thuat": {
+      "ai_tool": [
+        [
+          {
+            "node": "Tro ly chinh",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch2": {
+      "main": [
+        [
+          {
+            "node": "Analyze document",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Analyze document",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Analyze document",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If File Size < 20MB",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If File Size < 20MB",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Analyze document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Switch2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze document": {
+      "main": [
+        [
+          {
+            "node": "Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If File Size < 20MB": {
+      "main": [
+        [
+          {
+            "node": "CAD to PDF",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CAD to PDF": {
+      "main": [
+        [
+          {
+            "node": "Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "chat_bot": {
+      "main": [
+        [
+          {
+            "node": "Send Processing Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Image": {
+      "main": [
+        [
+          {
+            "node": "Fix Input Item",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Voice": {
+      "main": [
+        [
+          {
+            "node": "Transcribe a recording",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent Log": {
+      "main": [
+        [
+          {
+            "node": "Analyze and Get link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tro ly ke toan": {
+      "ai_tool": [
+        [
+          {
+            "node": "Tro ly chinh",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze an image": {
+      "main": [
+        [
+          {
+            "node": "Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Caption Analyze": {
+      "main": [
+        [
+          {
+            "node": "Analyze an image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Documents": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Response": {
+      "main": [
+        [
+          {
+            "node": "Xử lý Response Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Processing Message": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Knowledge (Write)": {
+      "ai_tool": [
+        [
+          {
+            "node": "Tro ly chinh",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Response Type": {
+      "main": [
+        [
+          {
+            "node": "SendPhoto (Quote)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SendMessage (PDF Only)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SendPhoto (Image Only)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SendMessage (Text Only)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SendPhoto (Quote)": {
+      "main": [
+        [
+          {
+            "node": "SendMessage (After Photo)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SendMessage (After Photo)": {
+      "main": [
+        [
+          {
+            "node": "SendSticker (Success)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Quote Data": {
+      "main": [
+        [
+          {
+            "node": "Response Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Tro ly chinh",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze and Get link": {
+      "main": [
+        [
+          {
+            "node": "Has Image?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Photo": {
+      "main": [
+        [
+          {
+            "node": "Has PDF?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Image?": {
+      "main": [
+        [
+          {
+            "node": "Send Photo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Has PDF?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has PDF?": {
+      "main": [
+        [
+          {
+            "node": "Send PDF",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Split Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send PDF": {
+      "main": [
+        [
+          {
+            "node": "Split Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Text": {
+      "main": [
+        [
+          {
+            "node": "Send Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fix Input Item": {
+      "main": [
+        [
+          {
+            "node": "Check Caption Analyze",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Processing Message2": {
+      "main": [
+        [
+          {
+            "node": "Clean Up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Context": {
+      "main": [
+        [
+          {
+            "node": "Tro ly chinh",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Knowledge": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Smart Search": {
+      "main": [
+        [
+          {
+            "node": "Search Knowledge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Search Tavily",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect New Knowledge": {
+      "main": [
+        [
+          {
+            "node": "If Should Learn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Should Learn": {
+      "main": [
+        [
+          {
+            "node": "Execute Save to RAG",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Processing Message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Save to RAG": {
+      "main": [
+        [
+          {
+            "node": "Send Processing Message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Tavily": {
+      "main": [
+        [
+          {
+            "node": "Check Tavily Quality",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Tavily Quality": {
+      "main": [
+        [
+          {
+            "node": "If Good Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Good Result": {
+      "main": [
+        [
+          {
+            "node": "Auto Save Web Knowledge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auto Save Web Knowledge": {
+      "main": [
+        [
+          {
+            "node": "Log Save Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Save Result": {
+      "main": [
+        [
+          {
+            "node": "Agent Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search in Tavily": {
+      "ai_tool": [
+        [
+          {
+            "node": "Tro ly chinh",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "e1b2fe7a-0cf0-40aa-aeab-cec40360299e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f79905368cdd8aefd97993159c6f1b332d2bef60e6af085cda589aa3db810691"
+  },
+  "id": "YX8wItpplTDz8hhp",
+  "tags": []
+}

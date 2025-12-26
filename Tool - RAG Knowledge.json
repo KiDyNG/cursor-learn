@@ -1,0 +1,401 @@
+{
+  "name": "Tool - RAG Knowledge",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "query",
+              "type": "any"
+            },
+            {
+              "name": "action",
+              "type": "any"
+            },
+            {
+              "name": "category",
+              "type": "any"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -448,
+        384
+      ],
+      "id": "58730352-54c6-45b2-b96b-b4703f1abbe2",
+      "name": "Workflow Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse input từ Agent\nconst input = $input.first().json;\nlet query = '';\nlet action = input.action || 'search';\nlet userId = input.userId || '';\nlet category = input.category || ''; // THÊM DÒNG NÀY\n\n// Lấy query/content từ nhiều nguồn có thể\nif (typeof input === 'string') {\n  query = input;\n} else if (input.query) {\n  query = input.query;\n} else if (input.content) {\n  query = input.content;\n} else if (input.chatInput) {\n  query = input.chatInput;\n} else if (input.input) {\n  query = input.input;\n} else {\n  query = JSON.stringify(input);\n}\n\n// Phân loại category tự động - CHỈ KHI CHƯA CÓ CATEGORY\nif (!category) {\n  const queryLower = query.toLowerCase();\n  \n  if (queryLower.includes('giá') || queryLower.includes('chi phí') || queryLower.includes('vnđ')) {\n    category = 'pricing';\n  } else if (queryLower.includes('vật liệu') || queryLower.includes('gỗ') || queryLower.includes('mdf')) {\n    category = 'material';\n  } else if (queryLower.includes('quy trình') || queryLower.includes('cách làm')) {\n    category = 'process';\n  } else if (queryLower.includes('sai') || queryLower.includes('sửa') || queryLower.includes('đúng là')) {\n    category = 'correction';\n  } else if (queryLower.includes('sản phẩm') || queryLower.includes('tủ') || queryLower.includes('bàn')) {\n    category = 'product';\n  } else {\n    category = 'general';\n  }\n}\n\nreturn [{\n  json: {\n    query: query,\n    action: action,\n    category: category,  // Giờ có thể từ input hoặc tự detect\n    userId: userId,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -208,
+        384
+      ],
+      "id": "66be16ae-6938-4c4e-b537-eaaec929fc02",
+      "name": "Parse Input"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "save",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "save-condition"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Save"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "search",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "search-condition"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Search"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        32,
+        368
+      ],
+      "id": "fe787294-33c4-46ec-9607-ea57ca5bf646",
+      "name": "Route Action"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zamexodnbxgmazdnajtd.supabase.co/rest/v1/knowledge",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphbWV4b2RuYnhnbWF6ZG5hanRkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjU5ODM1MiwiZXhwIjoyMDgyMTc0MzUyfQ.mAC3J7FD9ZY3RJL3hf7QSly_QoelpVmhERIe0NPnQHA"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphbWV4b2RuYnhnbWF6ZG5hanRkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjU5ODM1MiwiZXhwIjoyMDgyMTc0MzUyfQ.mAC3J7FD9ZY3RJL3hf7QSly_QoelpVmhERIe0NPnQHA"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"content\": {{ JSON.stringify($('Parse Input').item.json.query) }},\n  \"category\": {{ JSON.stringify($('Parse Input').item.json.category) }},\n  \"source\": \"user_teaching\",\n  \"embedding\": {{ JSON.stringify($json.embedding) }},\n  \"metadata\": {\n    \"user_id\": {{ JSON.stringify($('Parse Input').item.json.userId || '') }},\n    \"created_at\": {{ JSON.stringify($('Parse Input').item.json.timestamp) }}\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        912,
+        256
+      ],
+      "id": "4511d3b2-1db6-42b8-a42e-d45e47dc43ff",
+      "name": "Save to Supabase"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zamexodnbxgmazdnajtd.supabase.co/rest/v1/rpc/match_knowledge",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphbWV4b2RuYnhnbWF6ZG5hanRkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjU5ODM1MiwiZXhwIjoyMDgyMTc0MzUyfQ.mAC3J7FD9ZY3RJL3hf7QSly_QoelpVmhERIe0NPnQHA"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphbWV4b2RuYnhnbWF6ZG5hanRkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjU5ODM1MiwiZXhwIjoyMDgyMTc0MzUyfQ.mAC3J7FD9ZY3RJL3hf7QSly_QoelpVmhERIe0NPnQHA"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query_embedding\": {{ JSON.stringify($json.embedding) }},\n  \"match_threshold\": 0.6,\n  \"match_count\": 5\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        912,
+        496
+      ],
+      "id": "432699f4-1652-42a1-a035-8942564fd376",
+      "name": "Search Supabase",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format kết quả Save\nconst input = $('Parse Input').first().json;\nconst saveResult = $('Save to Supabase').first().json;\n\nlet message = '';\nif (saveResult && saveResult.id) {\n  message = `Đã ghi nhớ thành công: \"${input.query.substring(0, 150)}${input.query.length > 150 ? '...' : ''}\"`;\n} else {\n  message = `Đã ghi nhớ: \"${input.query.substring(0, 150)}${input.query.length > 150 ? '...' : ''}\"`;\n}\n\nreturn [{\n  json: {\n    success: true,\n    action: 'saved',\n    message: message,\n    category: input.category,\n    id: saveResult?.id || 'saved'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        256
+      ],
+      "id": "1d03515e-afeb-430e-ab73-bc165bc633c0",
+      "name": "Format Save Result",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format kết quả Search với xử lý lỗi an toàn\ntry {\n  // Lấy dữ liệu từ các node trước\n  let searchResult = null;\n  let input = null;\n  \n  try {\n    searchResult = $('Search Supabase').first().json;\n  } catch (e) {\n    // Nếu node Search Supabase lỗi hoặc không có output\n    console.error('Lỗi khi lấy kết quả từ Search Supabase:', e.message);\n    searchResult = null;\n  }\n  \n  try {\n    input = $('Parse Input').first().json;\n  } catch (e) {\n    console.error('Lỗi khi lấy input:', e.message);\n    input = { query: 'N/A' };\n  }\n  \n  // Kiểm tra nếu Supabase trả về lỗi\n  if (searchResult && searchResult.error) {\n    return [{\n      json: {\n        success: false,\n        action: 'search',\n        message: `Lỗi khi tìm kiếm: ${searchResult.error.message || searchResult.error}`,\n        query: input.query || 'N/A',\n        results: [],\n        error: searchResult.error\n      }\n    }];\n  }\n  \n  // Kiểm tra kết quả rỗng hoặc null\n  if (!searchResult) {\n    return [{\n      json: {\n        success: false,\n        action: 'search',\n        message: `Không nhận được kết quả từ database. Có thể database đang lỗi hoặc không có dữ liệu.`,\n        query: input.query || 'N/A',\n        results: []\n      }\n    }];\n  }\n  \n  // Parse kết quả - xử lý nhiều định dạng có thể\n  let results = [];\n  \n  try {\n    if (Array.isArray(searchResult)) {\n      results = searchResult;\n    } else if (searchResult && typeof searchResult === 'object') {\n      // Có thể là object đơn hoặc có property chứa array\n      if (Array.isArray(searchResult.data)) {\n        results = searchResult.data;\n      } else if (searchResult.data && typeof searchResult.data === 'object') {\n        results = [searchResult.data];\n      } else if (searchResult.content) {\n        results = [searchResult];\n      } else if (searchResult.length !== undefined && typeof searchResult.length === 'number') {\n        // Có thể là array-like object\n        results = Array.from(searchResult);\n      } else {\n        // Thử parse như object đơn\n        results = [searchResult];\n      }\n    }\n  } catch (e) {\n    console.error('Lỗi khi parse kết quả:', e.message);\n    results = [];\n  }\n  \n  // Không có kết quả\n  if (!results || results.length === 0) {\n    return [{\n      json: {\n        success: false,\n        action: 'search',\n        message: `Không tìm thấy thông tin liên quan đến: \"${input.query || 'N/A'}\"`,\n        query: input.query || 'N/A',\n        results: []\n      }\n    }];\n  }\n  \n  // Format kết quả - với xử lý lỗi cho từng item\n  const knowledge = [];\n  \n  for (const r of results) {\n    try {\n      if (r && (r.content || r.text)) {\n        knowledge.push({\n          content: r.content || r.text || '',\n          category: r.category || 'general',\n          similarity: r.similarity ? (typeof r.similarity === 'number' ? (r.similarity * 100).toFixed(1) + '%' : r.similarity) : 'N/A',\n          id: r.id || null,\n          metadata: r.metadata || null\n        });\n      }\n    } catch (e) {\n      console.error('Lỗi khi format item:', e.message);\n      // Bỏ qua item lỗi, tiếp tục với item khác\n    }\n  }\n  \n  // Lọc bỏ kết quả rỗng\n  const validKnowledge = knowledge.filter(k => k.content && k.content.trim().length > 0);\n  \n  if (validKnowledge.length === 0) {\n    return [{\n      json: {\n        success: false,\n        action: 'search',\n        message: `Không tìm thấy thông tin liên quan đến: \"${input.query || 'N/A'}\"`,\n        query: input.query || 'N/A',\n        results: []\n      }\n    }];\n  }\n  \n  // Tạo text tóm tắt\n  const summaryText = validKnowledge.map((k, i) => \n    `${i + 1}. [${k.category}] ${k.content}${k.similarity !== 'N/A' ? ' (độ khớp: ' + k.similarity + ')' : ''}`\n  ).join('\\n');\n  \n  return [{\n    json: {\n      success: true,\n      action: 'search',\n      message: `Tìm thấy ${validKnowledge.length} thông tin liên quan:\\n\\n${summaryText}`,\n      query: input.query || 'N/A',\n      results: validKnowledge\n    }\n  }];\n  \n} catch (error) {\n  // Xử lý mọi lỗi không mong đợi\n  console.error('Lỗi không mong đợi trong Format Search Result:', error);\n  \n  let query = 'N/A';\n  try {\n    const input = $('Parse Input').first().json;\n    query = input.query || 'N/A';\n  } catch (e) {\n    // Không thể lấy query\n  }\n  \n  return [{\n    json: {\n      success: false,\n      action: 'search',\n      message: `Đã xảy ra lỗi khi xử lý kết quả tìm kiếm: ${error.message || 'Lỗi không xác định'}`,\n      query: query,\n      results: [],\n      error: error.message || 'Unknown error'\n    }\n  }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        496
+      ],
+      "id": "c9e2a85d-8145-46dd-a248-534d3f9cb78d",
+      "name": "Format Search Result",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=AIzaSyBhRj9xQkHGoNC8SwMK3EtXSVJ8xYRxol0",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  \"model\": \"models/text-embedding-004\",\n  \"content\": {\n    \"parts\": [\n      {\n        \"text\": $json.query\n      }\n    ]\n  }\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        480,
+        256
+      ],
+      "id": "31081062-da92-41e7-a6f1-92e59e496eda",
+      "name": "Get Embedding (Save)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=AIzaSyBhRj9xQkHGoNC8SwMK3EtXSVJ8xYRxol0",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  \"model\": \"models/text-embedding-004\",\n  \"content\": {\n    \"parts\": [\n      {\n        \"text\": $json.query\n      }\n    ]\n  }\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        480,
+        496
+      ],
+      "id": "4228f511-31a9-4cd3-a5b1-0e6d64d3a952",
+      "name": "Get Embedding (Search)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst embedding = response.embedding?.values || [];\n\nreturn [{\n  json: {\n    ...$('Route Action').first().json,\n    embedding: embedding\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        688,
+        256
+      ],
+      "id": "bcf6f130-2a15-4556-bb26-404f97a3d785",
+      "name": "Parse Embedding (Save)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst embedding = response.embedding?.values || [];\n\nreturn [{\n  json: {\n    ...$('Route Action').first().json,\n    embedding: embedding\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        688,
+        496
+      ],
+      "id": "7e2a9b42-943e-46ac-b676-2aaa5cc855ff",
+      "name": "Parse Embedding (Search)"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Parse Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Input": {
+      "main": [
+        [
+          {
+            "node": "Route Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Action": {
+      "main": [
+        [
+          {
+            "node": "Get Embedding (Save)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Embedding (Search)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Supabase": {
+      "main": [
+        [
+          {
+            "node": "Format Save Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Supabase": {
+      "main": [
+        [
+          {
+            "node": "Format Search Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Embedding (Save)": {
+      "main": [
+        [
+          {
+            "node": "Parse Embedding (Save)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Embedding (Search)": {
+      "main": [
+        [
+          {
+            "node": "Parse Embedding (Search)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Embedding (Save)": {
+      "main": [
+        [
+          {
+            "node": "Save to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Embedding (Search)": {
+      "main": [
+        [
+          {
+            "node": "Search Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "73680912-c0e6-4be6-82cb-52c10da2ad53",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f79905368cdd8aefd97993159c6f1b332d2bef60e6af085cda589aa3db810691"
+  },
+  "id": "BKK33Pu7stWD1pR1",
+  "tags": []
+}
