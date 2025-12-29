@@ -1,0 +1,268 @@
+{
+  "name": "Tro ly giao viec",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "zalo-webhook",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1136,
+        128
+      ],
+      "id": "aa9d486c-fe17-4563-ad2a-d063e9fa02b8",
+      "name": "Webhook Zalo (Nhận tin nhắn)",
+      "webhookId": "85e18a50-0d3e-470e-b541-bcd073d4d286"
+    },
+    {
+      "parameters": {
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        -848,
+        368
+      ],
+      "id": "83f162f2-10de-4fb1-8923-03af35d11abf",
+      "name": "OpenAI Model"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.message.text }}",
+        "options": {
+          "systemMessage": "Bạn là trợ lý ảo quản lý công việc. Nhiệm vụ của bạn là trích xuất thông tin từ tin nhắn người dùng thành định dạng JSON.\n\nNgười dùng sẽ nói câu như: \"Giao cho Lan làm báo cáo tài chính hạn thứ 6 tuần này\".\nBạn hãy trả về JSON duy nhất (không có markdown) với cấu trúc:\n{\n  \"intent\": \"assign_task\",\n  \"assignee\": \"Lan\",\n  \"task_name\": \"báo cáo tài chính\",\n  \"deadline\": \"thứ 6 tuần này\"\n}\n\nNếu người dùng chỉ chào hỏi, trả về { \"intent\": \"chat\", \"reply\": \"câu trả lời chào hỏi thân thiện\" }."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -848,
+        128
+      ],
+      "id": "e82680ba-7b1e-48c2-9081-b2cfa1bd3637",
+      "name": "AI Agent (Phân tích)",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Chuyển đổi output của AI (dạng text) thành JSON object thực sự để các node sau dùng được\nconst aiContent = $input.first().json.output;\n\ntry {\n  // Tìm và parse JSON từ câu trả lời của AI\n  const jsonMatch = aiContent.match(/\\{^[\\s\\S]*?\\}/m) || [aiContent];\n  const parsed = JSON.parse(jsonMatch[0] || aiContent);\n  return parsed;\n} catch (e) {\n  return { error: \"Không parse được JSON\", raw: aiContent };\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        16
+      ],
+      "id": "61771ef8-cd1c-4db5-ae29-2e7c074b86e6",
+      "name": "Code (Parse JSON)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.intent }}",
+              "operation": "equal",
+              "value2": "assign_task"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -256,
+        16
+      ],
+      "id": "b5f5df68-d2d9-496c-b106-d37374aea19c",
+      "name": "Là giao việc?"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "DIEN_ID_GOOGLE_SHEET_CUA_BAN_VAO_DAY"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "Sheet1"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Task Name": "={{ $json.task_name }}",
+            "Assignee": "={{ $json.assignee }}",
+            "Deadline": "={{ $json.deadline }}",
+            "Status": "Pending",
+            "Created At": "={{ $now }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Task Name",
+              "displayName": "Task Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Assignee",
+              "displayName": "Assignee",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Deadline",
+              "displayName": "Deadline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Created At",
+              "displayName": "Created At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "9a94a462-d620-4980-a3f6-7d95203c5efb",
+      "name": "Lưu vào GSheet"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openapi.zalo.me/v3.0/oa/message/cs",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeader",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "access_token",
+              "value": "DIEN_TOKEN_ZALO_CUA_BAN_VAO_DAY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"recipient\": {\n    \"user_id\": \"{{ $('Webhook Zalo (Nhận tin nhắn)').item.json.body.sender.id }}\"\n  },\n  \"message\": {\n    \"text\": \"✅ Đã giao việc '{{ $json[\"Task Name\"] }}' cho {{ $json.Assignee }}. Deadline: {{ $json.Deadline }}\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        0
+      ],
+      "id": "f3c5fcad-93c4-457c-802c-6574f669f2cd",
+      "name": "Phản hồi Zalo (OK)"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Zalo (Nhận tin nhắn)": {
+      "main": [
+        [
+          {
+            "node": "AI Agent (Phân tích)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent (Phân tích)": {
+      "main": [
+        [
+          {
+            "node": "Code (Parse JSON)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code (Parse JSON)": {
+      "main": [
+        [
+          {
+            "node": "Là giao việc?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Là giao việc?": {
+      "main": [
+        [
+          {
+            "node": "Lưu vào GSheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lưu vào GSheet": {
+      "main": [
+        [
+          {
+            "node": "Phản hồi Zalo (OK)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9bef8ab1-37d5-4a30-9725-8a2ef53297d8",
+  "meta": {
+    "instanceId": "f79905368cdd8aefd97993159c6f1b332d2bef60e6af085cda589aa3db810691"
+  },
+  "id": "pzqt6vgzyO9wT7Cr",
+  "tags": []
+}

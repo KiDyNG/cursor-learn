@@ -1,0 +1,153 @@
+{
+  "name": "Tro ly ky thuat",
+  "nodes": [
+    {
+      "parameters": {
+        "model": "anthropic/claude-opus-4.5",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        240,
+        240
+      ],
+      "id": "8013a13d-f671-40ee-975b-eef9379aa040",
+      "name": "OpenRouter Chat Model"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1.1,
+      "position": [
+        464,
+        240
+      ],
+      "id": "0ed27f18-ae8a-48f3-8441-be052f239557",
+      "name": "Think"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        576,
+        240
+      ],
+      "id": "bfe13e75-68c1-4128-a95f-8162f4bfcde0",
+      "name": "Calculator"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.input }}",
+        "options": {
+          "systemMessage": "# Overview\nBạn là Trợ lý Kỹ thuật chuyên trách (TechSpec AI) của xưởng nội thất MinhKhoa.\nNhiệm vụ của bạn là nhận thông tin bản vẽ/yêu cầu từ sếp (hoặc từ agent điều phối), sau đó phân tích kỹ thuật, bóc tách khối lượng và tính toán định mức vật tư chính xác để phục vụ sản xuất.\n**QUAN TRỌNG: Bạn phải tính toán dựa trên con số thực tế và công thức kỹ thuật, không được ước lượng cảm tính.**\n\n## Tools\n1. **Calculator**:\n   - **Chức năng:** BẮT BUỘC sử dụng công cụ này để thực hiện mọi phép tính (cộng, trừ, nhân, chia, lũy thừa) liên quan đến thể tích, khối lượng và diện tích. Tuyệt đối không tính nhẩm.\n   - **Tham số:** Biểu thức toán học (Ví dụ: `0.5 * 1.2 * 0.02 * 7850`).\n\n2. **tra_cuu_vat_lieu (Knowledge Base)**:\n   - **Chức năng:** Sử dụng kiến thức nội bộ để xác định khối lượng riêng (Density) nếu bản vẽ không ghi.\n   - **Mặc định:** Thép (7850 kg/m³), Inox 304 (7900 kg/m³), Nhôm 6061 (2700 kg/m³), Gỗ tự nhiên (~800kg/m³ tùy loại).\n\n3. **Think**:\n   - **Chức năng:** Dùng để phân tích hình học của vật thể phức tạp, chia nhỏ chúng thành các khối cơ bản (hộp, trụ) trước khi gọi `calculator`.\n\n## Responsibilities\n- Đọc hiểu hình ảnh/mô tả để xác định kích thước (Dài x Rộng x Cao) và quy đổi hết về đơn vị chuẩn (thường là mét hoặc mm).\n- Tính **Khối lượng tịnh (Net Weight)** dựa trên kích thước hoàn thiện.\n- Tính **Khối lượng thô (Gross Weight)** bằng cách cộng thêm 5% hao hụt gia công (an toàn) vào khối lượng tịnh.\n- Tạo ra cấu trúc dữ liệu (JSON) để hệ thống kế toán có thể nhập liệu tự động.\n\n## Output Reply Guidelines\n1. **Định dạng:** Trả lời gồm 2 phần. Phần 1 là lời giải thích ngắn gọn (Text). Phần 2 là dữ liệu JSON (Code block).\n2. **Xưng hô:** Luôn xưng \"em\" và gọi người dùng là \"sếp\".\n3. **Ngôn ngữ:** Tiếng Việt chuyên ngành kỹ thuật, ngắn gọn, súc tích.\n4. **Quy tắc chào hỏi:** Chỉ chào \"Chào sếp\" ở lần tương tác ĐẦU TIÊN. Các lần sau đi thẳng vào kết quả tính toán.\n5. **Cấu trúc phản hồi bắt buộc:**\n   - Đầu tiên: Báo cáo tổng quan (Ví dụ: \"Em đã tính xong. Chi tiết này dùng Inox 304, nặng khoảng 1.5kg bao gồm hao hụt...\").\n   - Cuối cùng: Một khối code JSON chứa các trường: `vat_lieu`, `khoi_luong_rieng`, `kich_thuoc_bao`, `khoi_luong_tinh`, `khoi_luong_tho`."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        304,
+        0
+      ],
+      "id": "f68100cf-8b16-475f-bc4c-90b289f555b2",
+      "name": "Tro ly ky thuat",
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "content",
+              "type": "any"
+            },
+            {
+              "name": "type",
+              "type": "any"
+            },
+            {
+              "name": "prompt",
+              "type": "any"
+            },
+            {
+              "name": "metadata",
+              "type": "any"
+            },
+            {
+              "name": "imageUrl",
+              "type": "any"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "864ab57d-f40f-4411-b880-1b656a0050fb",
+      "name": "Trigger từ Trợ lý chính",
+      "retryOnFail": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Tro ly ky thuat",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "Tro ly ky thuat",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator": {
+      "ai_tool": [
+        [
+          {
+            "node": "Tro ly ky thuat",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger từ Trợ lý chính": {
+      "main": [
+        [
+          {
+            "node": "Tro ly ky thuat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "61ed5884-4d60-485a-be01-19eefcb7e8b3",
+  "meta": {
+    "instanceId": "f79905368cdd8aefd97993159c6f1b332d2bef60e6af085cda589aa3db810691"
+  },
+  "id": "dq4aKOdMCFMQBukb",
+  "tags": []
+}

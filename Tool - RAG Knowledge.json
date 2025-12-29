@@ -23,10 +23,10 @@
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
       "position": [
-        -448,
-        384
+        1472,
+        1632
       ],
-      "id": "58730352-54c6-45b2-b96b-b4703f1abbe2",
+      "id": "1c9fe827-1b46-44a5-9f4d-e58541d0cd2c",
       "name": "Workflow Trigger"
     },
     {
@@ -36,10 +36,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -208,
-        384
+        1712,
+        1632
       ],
-      "id": "66be16ae-6938-4c4e-b537-eaaec929fc02",
+      "id": "1f9c8849-4126-4e02-aee3-a293ccd14835",
       "name": "Parse Input"
     },
     {
@@ -103,10 +103,10 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        32,
-        368
+        1952,
+        1616
       ],
-      "id": "fe787294-33c4-46ec-9607-ea57ca5bf646",
+      "id": "a4dbaacb-e3c0-4cea-8652-c132856180b8",
       "name": "Route Action"
     },
     {
@@ -142,10 +142,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        912,
-        256
+        2832,
+        1504
       ],
-      "id": "4511d3b2-1db6-42b8-a42e-d45e47dc43ff",
+      "id": "b3c8197d-f414-4b3f-9f38-6f82efbe9c24",
       "name": "Save to Supabase"
     },
     {
@@ -177,10 +177,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        912,
-        496
+        2832,
+        1744
       ],
-      "id": "432699f4-1652-42a1-a035-8942564fd376",
+      "id": "a1e624ce-c922-47cd-b6b9-cdf61103e266",
       "name": "Search Supabase",
       "alwaysOutputData": false
     },
@@ -191,10 +191,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1152,
-        256
+        3072,
+        1504
       ],
-      "id": "1d03515e-afeb-430e-ab73-bc165bc633c0",
+      "id": "fb072e63-2b00-4dd0-80b2-2b018f9d149a",
       "name": "Format Save Result",
       "alwaysOutputData": true
     },
@@ -205,10 +205,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1152,
-        496
+        3072,
+        1744
       ],
-      "id": "c9e2a85d-8145-46dd-a248-534d3f9cb78d",
+      "id": "c2583f8f-906b-4f49-a84c-c6166db3cca7",
       "name": "Format Search Result",
       "alwaysOutputData": true
     },
@@ -224,10 +224,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        480,
-        256
+        2400,
+        1504
       ],
-      "id": "31081062-da92-41e7-a6f1-92e59e496eda",
+      "id": "0c309f86-bdd1-4cbf-a756-a1235f44d93f",
       "name": "Get Embedding (Save)"
     },
     {
@@ -242,36 +242,36 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        480,
-        496
+        2400,
+        1744
       ],
-      "id": "4228f511-31a9-4cd3-a5b1-0e6d64d3a952",
+      "id": "a4468552-41f0-48a0-b7a1-36e9df1628f3",
       "name": "Get Embedding (Search)"
     },
     {
       "parameters": {
-        "jsCode": "const response = $input.first().json;\nconst embedding = response.embedding?.values || [];\n\nreturn [{\n  json: {\n    ...$('Route Action').first().json,\n    embedding: embedding\n  }\n}];"
+        "jsCode": "const response = $input.first().json;\nconst embedding = response.embedding?.values || [];\n\n// Lấy data từ Parse Input thay vì Route Action (vì Route Action đã split output)\nconst parseInput = $('Parse Input').first().json;\n\nreturn [{\n  json: {\n    query: parseInput.query,\n    action: parseInput.action,\n    category: parseInput.category,\n    userId: parseInput.userId,\n    timestamp: parseInput.timestamp,\n    embedding: embedding\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        688,
-        256
+        2608,
+        1504
       ],
-      "id": "bcf6f130-2a15-4556-bb26-404f97a3d785",
+      "id": "1fd51b88-de89-47a2-9d1d-8c93162e4f40",
       "name": "Parse Embedding (Save)"
     },
     {
       "parameters": {
-        "jsCode": "const response = $input.first().json;\nconst embedding = response.embedding?.values || [];\n\nreturn [{\n  json: {\n    ...$('Route Action').first().json,\n    embedding: embedding\n  }\n}];"
+        "jsCode": "const response = $input.first().json;\nconst embedding = response.embedding?.values || [];\n\n// Lấy data từ Parse Input thay vì Route Action (vì Route Action đã split output)\nconst parseInput = $('Parse Input').first().json;\n\nreturn [{\n  json: {\n    query: parseInput.query,\n    action: parseInput.action,\n    category: parseInput.category,\n    userId: parseInput.userId,\n    timestamp: parseInput.timestamp,\n    embedding: embedding\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        688,
-        496
+        2608,
+        1744
       ],
-      "id": "7e2a9b42-943e-46ac-b676-2aaa5cc855ff",
+      "id": "1a8cf916-b088-422a-a4c5-066c3e597064",
       "name": "Parse Embedding (Search)"
     }
   ],
@@ -387,15 +387,13 @@
   "active": true,
   "settings": {
     "executionOrder": "v1",
-    "timeSavedMode": "fixed",
-    "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
   },
-  "versionId": "73680912-c0e6-4be6-82cb-52c10da2ad53",
+  "versionId": "1f6700e3-e2c3-480d-89cc-ec58882a516d",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "f79905368cdd8aefd97993159c6f1b332d2bef60e6af085cda589aa3db810691"
+    "instanceId": "69e895a6c5b8ce31f24bef11428401cf3ae06095d76628a1259bda113b4a62f2"
   },
-  "id": "BKK33Pu7stWD1pR1",
+  "id": "x2L5rQZ1DPGBD6zJ",
   "tags": []
 }

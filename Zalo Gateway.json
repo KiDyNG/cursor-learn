@@ -1,0 +1,202 @@
+{
+  "name": "Zalo Gateway",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "2c429418-efa2-4357-ba0a-c02758bbd000",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -400,
+        300
+      ],
+      "id": "webhook-trigger",
+      "name": "Zalo Webhook",
+      "webhookId": "2c429418-efa2-4357-ba0a-c02758bbd000"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse webhook data từ Zalo\nconst webhookData = $input.first().json;\nconst body = webhookData.body || {};\nconst message = body.message || {};\n\n// Extract thông tin\nconst chatId = message.chat?.id || message.from?.id || '';\nconst userId = message.from?.id || '';\nconst userName = message.from?.first_name || '';\nconst messageText = message.text || message.caption || '';\nconst photoUrl = message.photo_url || '';\nconst voiceFileId = message.voice?.file_id || '';\nconst document = message.document || null;\n\n// Xác định message type\nlet messageType = 'text';\nif (photoUrl) messageType = 'image';\nelse if (voiceFileId) messageType = 'voice';\nelse if (document) messageType = 'document';\n\n// Validate\nif (!chatId) {\n  return [{ json: { error: 'Missing chat_id', skip: true } }];\n}\n\nreturn [{\n  json: {\n    chat_id: chatId,\n    user_id: userId,\n    user_name: userName,\n    message_text: messageText,\n    message_type: messageType,\n    photo_url: photoUrl || null,\n    voice_file_id: voiceFileId || null,\n    document: document,\n    raw_data: webhookData\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -200,
+        300
+      ],
+      "id": "parse-message",
+      "name": "Parse Message"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-skip",
+              "leftValue": "={{ $json.skip }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        300
+      ],
+      "id": "check-valid",
+      "name": "Is Valid?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zamexodnbxgmazdnajtd.supabase.co/rest/v1/rpc/upsert_message_buffer",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphbWV4b2RuYnhnbWF6ZG5hanRkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjU5ODM1MiwiZXhwIjoyMDgyMTc0MzUyfQ.mAC3J7FD9ZY3RJL3hf7QSly_QoelpVmhERIe0NPnQHA"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphbWV4b2RuYnhnbWF6ZG5hanRkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjU5ODM1MiwiZXhwIjoyMDgyMTc0MzUyfQ.mAC3J7FD9ZY3RJL3hf7QSly_QoelpVmhERIe0NPnQHA"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"p_chat_id\": {{ JSON.stringify($json.chat_id) }},\n  \"p_user_id\": {{ JSON.stringify($json.user_id) }},\n  \"p_user_name\": {{ JSON.stringify($json.user_name) }},\n  \"p_message_text\": {{ JSON.stringify($json.message_text) }},\n  \"p_message_type\": {{ JSON.stringify($json.message_type) }},\n  \"p_photo_url\": {{ JSON.stringify($json.photo_url) }},\n  \"p_voice_file_id\": {{ JSON.stringify($json.voice_file_id) }},\n  \"p_document\": {{ JSON.stringify($json.document) }},\n  \"p_buffer_window_seconds\": 3\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        200,
+        200
+      ],
+      "id": "save-to-buffer",
+      "name": "Save to Buffer"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"status\": \"ok\", \"buffered\": true}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        400,
+        200
+      ],
+      "id": "respond-ok",
+      "name": "Respond OK"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"status\": \"ok\", \"skipped\": true}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        200,
+        400
+      ],
+      "id": "respond-skip",
+      "name": "Respond Skip"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Zalo Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Message": {
+      "main": [
+        [
+          {
+            "node": "Is Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Valid?": {
+      "main": [
+        [
+          {
+            "node": "Save to Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Skip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Buffer": {
+      "main": [
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "zalo-gateway-v1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "zalo-gateway-workflow",
+  "tags": []
+}
+

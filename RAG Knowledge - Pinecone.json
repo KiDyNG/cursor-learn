@@ -1,0 +1,401 @@
+{
+  "name": "RAG Knowledge - Pinecone",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "query",
+              "type": "any"
+            },
+            {
+              "name": "action",
+              "type": "any"
+            },
+            {
+              "name": "category",
+              "type": "any"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        300
+      ],
+      "id": "workflow-trigger",
+      "name": "Workflow Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse input from parent workflow\nconst input = $input.first().json;\n\nconst query = input.query || '';\nconst action = input.action || 'search'; // 'search' or 'save'\nconst category = input.category || 'general';\n\nif (!query || query.trim() === '') {\n  return [{\n    json: {\n      success: false,\n      message: 'Query is empty',\n      action: action\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    query: query.trim(),\n    action: action,\n    category: category\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        300
+      ],
+      "id": "parse-input",
+      "name": "Parse Input"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "save",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "save-condition"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Save"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "search",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "search-condition"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Search"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        440,
+        300
+      ],
+      "id": "route-action",
+      "name": "Route Action"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=AIzaSyBhRj9xQkHGoNC8SwMK3EtXSVJ8xYRxol0",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"models/text-embedding-004\",\n  \"content\": {\n    \"parts\": [{ \"text\": {{ JSON.stringify($json.query) }} }]\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        660,
+        180
+      ],
+      "id": "get-embedding-save",
+      "name": "Get Embedding (Save)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=AIzaSyBhRj9xQkHGoNC8SwMK3EtXSVJ8xYRxol0",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"models/text-embedding-004\",\n  \"content\": {\n    \"parts\": [{ \"text\": {{ JSON.stringify($json.query) }} }]\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        660,
+        420
+      ],
+      "id": "get-embedding-search",
+      "name": "Get Embedding (Search)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse embedding response and prepare for Pinecone upsert\nconst response = $input.first().json;\nconst parseInput = $('Parse Input').first().json;\n\nconst embedding = response.embedding?.values || [];\n\nif (embedding.length !== 768) {\n  return [{\n    json: {\n      success: false,\n      message: `Invalid embedding dimensions: ${embedding.length}, expected 768`\n    }\n  }];\n}\n\n// Generate unique ID\nconst id = 'kb_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);\n\nreturn [{\n  json: {\n    id: id,\n    values: embedding,\n    metadata: {\n      content: parseInput.query,\n      category: parseInput.category,\n      created_at: new Date().toISOString()\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        180
+      ],
+      "id": "prepare-upsert",
+      "name": "Prepare Upsert"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse embedding response for search\nconst response = $input.first().json;\nconst parseInput = $('Parse Input').first().json;\n\nconst embedding = response.embedding?.values || [];\n\nif (embedding.length !== 768) {\n  return [{\n    json: {\n      success: false,\n      message: `Invalid embedding dimensions: ${embedding.length}`,\n      results: []\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    query: parseInput.query,\n    embedding: embedding\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        420
+      ],
+      "id": "prepare-search",
+      "name": "Prepare Search"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://minhkhoa-knowledge-db0pu9l.svc.aped-4627-b74a.pinecone.io/vectors/upsert",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Api-Key",
+              "value": "pcsk_cj2MU_Hv6o3ZKzx7ikncKrYr6cRGvq6w8Z88uCrNEs8unwbBtthEYmmvCWa5cUBxdZYgH"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"vectors\": [\n    {\n      \"id\": {{ JSON.stringify($json.id) }},\n      \"values\": {{ JSON.stringify($json.values) }},\n      \"metadata\": {{ JSON.stringify($json.metadata) }}\n    }\n  ],\n  \"namespace\": \"minhkhoa\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1100,
+        180
+      ],
+      "id": "pinecone-upsert",
+      "name": "Pinecone Upsert"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://minhkhoa-knowledge-db0pu9l.svc.aped-4627-b74a.pinecone.io/query",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Api-Key",
+              "value": "pcsk_cj2MU_Hv6o3ZKzx7ikncKrYr6cRGvq6w8Z88uCrNEs8unwbBtthEYmmvCWa5cUBxdZYgH"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"vector\": {{ JSON.stringify($json.embedding) }},\n  \"topK\": 5,\n  \"includeMetadata\": true,\n  \"namespace\": \"minhkhoa\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1100,
+        420
+      ],
+      "id": "pinecone-query",
+      "name": "Pinecone Query"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format save result\nconst upsertResult = $input.first().json;\nconst prepareData = $('Prepare Upsert').first().json;\n\nreturn [{\n  json: {\n    success: true,\n    message: `Đã lưu kiến thức: \"${prepareData.metadata.content.substring(0, 50)}...\"`,\n    id: prepareData.id,\n    category: prepareData.metadata.category\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        180
+      ],
+      "id": "format-save-result",
+      "name": "Format Save Result"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format search results\nconst queryResult = $input.first().json;\nconst originalQuery = $('Prepare Search').first().json.query;\n\nconst matches = queryResult.matches || [];\n\nif (matches.length === 0) {\n  return [{\n    json: {\n      success: false,\n      message: `Không tìm thấy thông tin liên quan đến: \"${originalQuery}\"`,\n      results: []\n    }\n  }];\n}\n\n// Filter by score threshold (0.7)\nconst relevantMatches = matches.filter(m => m.score >= 0.7);\n\nif (relevantMatches.length === 0) {\n  return [{\n    json: {\n      success: false,\n      message: `Không tìm thấy thông tin đủ liên quan đến: \"${originalQuery}\"`,\n      results: []\n    }\n  }];\n}\n\nconst results = relevantMatches.map(m => ({\n  content: m.metadata?.content || '',\n  category: m.metadata?.category || 'general',\n  similarity: Math.round(m.score * 100) + '%',\n  id: m.id\n}));\n\nreturn [{\n  json: {\n    success: true,\n    message: `Tìm thấy ${results.length} kết quả`,\n    query: originalQuery,\n    results: results\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        420
+      ],
+      "id": "format-search-result",
+      "name": "Format Search Result"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Parse Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Input": {
+      "main": [
+        [
+          {
+            "node": "Route Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Action": {
+      "main": [
+        [
+          {
+            "node": "Get Embedding (Save)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Embedding (Search)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Embedding (Save)": {
+      "main": [
+        [
+          {
+            "node": "Prepare Upsert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Embedding (Search)": {
+      "main": [
+        [
+          {
+            "node": "Prepare Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Upsert": {
+      "main": [
+        [
+          {
+            "node": "Pinecone Upsert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Search": {
+      "main": [
+        [
+          {
+            "node": "Pinecone Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Upsert": {
+      "main": [
+        [
+          {
+            "node": "Format Save Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Query": {
+      "main": [
+        [
+          {
+            "node": "Format Search Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "rag-pinecone-v1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "rag-knowledge-pinecone",
+  "tags": []
+}
+

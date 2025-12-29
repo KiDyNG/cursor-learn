@@ -1,0 +1,139 @@
+{
+  "name": "Zalo Receiver",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "2c429418-efa2-4357-ba0a-c02758bbd000",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -400,
+        300
+      ],
+      "id": "webhook-receiver",
+      "name": "chat_bot",
+      "webhookId": "2c429418-efa2-4357-ba0a-c02758bbd000"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Chuẩn bị dữ liệu để lưu vào queue\nconst webhookData = $input.first().json;\nconst body = webhookData.body || {};\nconst message = body.message || {};\n\n// Extract thông tin cần thiết\nconst messageData = {\n  message_id: message.message_id || message.id || null,\n  chat_id: message.chat?.id || body.chat?.id || null,\n  user_id: message.from?.id || body.from?.id || null,\n  user_name: message.from?.first_name || body.from?.first_name || \"\",\n  text: message.text || \"\",\n  caption: message.caption || \"\",\n  photo_url: message.photo_url || body.photo_url || \"\",\n  voice_file_id: message.voice?.file_id || \"\",\n  document: message.document ? {\n    file_id: message.document.file_id,\n    file_name: message.document.file_name,\n    file_size: message.document.file_size,\n    mime_type: message.document.mime_type\n  } : null,\n  raw_data: webhookData, // Lưu toàn bộ dữ liệu gốc\n  created_at: new Date().toISOString()\n};\n\nreturn [{\n  json: messageData\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -200,
+        300
+      ],
+      "id": "prepare-queue-data",
+      "name": "Prepare Queue Data"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zamexodnbxgmazdnajtd.supabase.co/rest/v1/message_queue",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphbWV4b2RuYnhnbWF6ZG5hanRkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjU5ODM1MiwiZXhwIjoyMDgyMTc0MzUyfQ.mAC3J7FD9ZY3RJL3hf7QSly_QoelpVmhERIe0NPnQHA"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphbWV4b2RuYnhnbWF6ZG5hanRkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjU5ODM1MiwiZXhwIjoyMDgyMTc0MzUyfQ.mAC3J7FD9ZY3RJL3hf7QSly_QoelpVmhERIe0NPnQHA"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"message_id\": {{ JSON.stringify($json.message_id) }},\n  \"chat_id\": {{ JSON.stringify($json.chat_id) }},\n  \"user_id\": {{ JSON.stringify($json.user_id) }},\n  \"user_name\": {{ JSON.stringify($json.user_name) }},\n  \"text\": {{ JSON.stringify($json.text) }},\n  \"caption\": {{ JSON.stringify($json.caption) }},\n  \"photo_url\": {{ JSON.stringify($json.photo_url) }},\n  \"voice_file_id\": {{ JSON.stringify($json.voice_file_id) }},\n  \"document\": {{ JSON.stringify($json.document) }},\n  \"raw_data\": {{ JSON.stringify($json.raw_data) }},\n  \"status\": \"pending\",\n  \"created_at\": {{ JSON.stringify($json.created_at) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        0,
+        300
+      ],
+      "id": "save-to-queue",
+      "name": "Save to Supabase Queue"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"status\": \"ok\"}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        200,
+        300
+      ],
+      "id": "respond-webhook",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "chat_bot": {
+      "main": [
+        [
+          {
+            "node": "Prepare Queue Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Queue Data": {
+      "main": [
+        [
+          {
+            "node": "Save to Supabase Queue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Supabase Queue": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "zalo-receiver-v1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "zalo-receiver-workflow",
+  "tags": []
+}
+
+

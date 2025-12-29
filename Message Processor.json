@@ -1,6 +1,140 @@
 {
-  "name": "Tro ly chinh",
+  "name": "Message Processor",
   "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds",
+              "secondsInterval": 3
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -9000,
+        300
+      ],
+      "id": "schedule-trigger",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://zamexodnbxgmazdnajtd.supabase.co/rest/v1/message_queue?status=eq.pending&order=created_at.asc&limit=1",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphbWV4b2RuYnhnbWF6ZG5hanRkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjU5ODM1MiwiZXhwIjoyMDgyMTc0MzUyfQ.mAC3J7FD9ZY3RJL3hf7QSly_QoelpVmhERIe0NPnQHA"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphbWV4b2RuYnhnbWF6ZG5hanRkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjU5ODM1MiwiZXhwIjoyMDgyMTc0MzUyfQ.mAC3J7FD9ZY3RJL3hf7QSly_QoelpVmhERIe0NPnQHA"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -8800,
+        300
+      ],
+      "id": "get-pending-message",
+      "name": "Get Pending Message"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has-message-check",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -8600,
+        300
+      ],
+      "id": "has-message",
+      "name": "Has message?"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://zamexodnbxgmazdnajtd.supabase.co/rest/v1/message_queue?id=eq.{{ $json.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphbWV4b2RuYnhnbWF6ZG5hanRkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjU5ODM1MiwiZXhwIjoyMDgyMTc0MzUyfQ.mAC3J7FD9ZY3RJL3hf7QSly_QoelpVmhERIe0NPnQHA"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphbWV4b2RuYnhnbWF6ZG5hanRkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjU5ODM1MiwiZXhwIjoyMDgyMTc0MzUyfQ.mAC3J7FD9ZY3RJL3hf7QSly_QoelpVmhERIe0NPnQHA"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"status\": \"processing\",\n  \"processing_started_at\": {{ JSON.stringify($now.toISO()) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -8400,
+        300
+      ],
+      "id": "lock-message",
+      "name": "Lock message"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Convert queue message to format compatible with old workflow\nconst queueData = $input.first().json;\nconst rawData = queueData.raw_data || {};\n\n// Reconstruct message structure similar to webhook format\nreturn [{\n  json: {\n    body: {\n      message: {\n        text: queueData.text || \"\",\n        caption: queueData.caption || \"\",\n        photo_url: queueData.photo_url || \"\",\n        voice: queueData.voice_file_id ? { file_id: queueData.voice_file_id } : null,\n        document: queueData.document || null,\n        from: {\n          id: queueData.user_id,\n          first_name: queueData.user_name\n        },\n        chat: {\n          id: queueData.chat_id\n        },\n        message_id: queueData.message_id\n      }\n    },\n    // Keep queue data for reference\n    queue_id: queueData.id,\n    chat_id: queueData.chat_id,\n    user_id: queueData.user_id\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -8200,
+        300
+      ],
+      "id": "convert-queue-data",
+      "name": "Convert Queue Data"
+    },
     {
       "parameters": {
         "description": "Sử dụng công cụ này để suy nghĩ về một vấn đề nào đó. Nó sẽ không thu thập thông tin mới hoặc thay đổi cơ sở dữ liệu, mà chỉ thêm suy nghĩ đó vào nhật ký. Sử dụng công cụ này khi cần suy luận phức tạp hoặc bộ nhớ đệm."
@@ -18,7 +152,7 @@
     {
       "parameters": {
         "sessionIdType": "customKey",
-        "sessionKey": "={{ $('chat_bot').item.json.body.message.from.id }}",
+        "sessionKey": "={{ $json.body.message.from.id }}",
         "databaseName": "MinhKhoaAI",
         "contextWindowLength": 50
       },
@@ -91,7 +225,7 @@
                 "conditions": [
                   {
                     "id": "8c844924-b2ed-48b0-935c-c66a8fd0c778",
-                    "leftValue": "={{ $('chat_bot').item.json.body.message.text }}",
+                    "leftValue": "={{ $json.body.message.text }}",
                     "rightValue": "",
                     "operator": {
                       "type": "string",
@@ -116,7 +250,7 @@
                 "conditions": [
                   {
                     "id": "8b435dee-29e5-4ac2-a827-1811c2f6f04d",
-                    "leftValue": "={{ $('chat_bot').item.json.body.message.photo_url }}",
+                    "leftValue": "={{ $json.body.message.photo_url }}",
                     "rightValue": "",
                     "operator": {
                       "type": "string",
@@ -141,7 +275,7 @@
                 "conditions": [
                   {
                     "id": "d39eb705-3eb9-4867-8448-9d3e4c72ea4d",
-                    "leftValue": "={{ $('chat_bot').item.json.body.message.from.id }}",
+                    "leftValue": "={{ $json.body.message.from.id }}",
                     "rightValue": "",
                     "operator": {
                       "type": "string",
@@ -201,7 +335,7 @@
             {
               "id": "976cf2c9-01b6-46cf-97b4-675a67ca57bc",
               "name": "content",
-              "value": "={{ $('chat_bot').item.json.body.message.text || $('chat_bot').item.json.message?.caption || \"[Ảnh được gửi - cần phân tích nếu muốn xem nội dung]\" }}",
+              "value": "={{ $json.body.message.text || $json.body.message?.caption || \"[Ảnh được gửi - cần phân tích nếu muốn xem nội dung]\" }}",
               "type": "string"
             },
             {
@@ -213,19 +347,19 @@
             {
               "id": "25e9ee59-63c9-4eb4-a9b2-0847f4f83b67",
               "name": "prompt",
-              "value": "={{ $('chat_bot').item.json.message?.caption || $('chat_bot').item.json.body.message.text || $json.content?.parts?.[0]?.text || \"\" }}",
+              "value": "={{ $json.body.message?.caption || $json.body.message.text || $json.content?.parts?.[0]?.text || \"\" }}",
               "type": "string"
             },
             {
               "id": "4a5e3df4-333a-43c6-9f72-4fe8b2bf9b60",
               "name": "metadata",
-              "value": "={{   JSON.stringify({     fileName: $('chat_bot').item.json.message?.document?.file_name || \"\",     fileSize: $('chat_bot').item.json.message?.document?.file_size || 0,     userName: $('chat_bot').item.json.message?.from?.first_name || \"\",     chatId: $('chat_bot').item.json.message?.chat?.id || \"\"   }) }}",
+              "value": "={{   JSON.stringify({     fileName: $json.body.message?.document?.file_name || \"\",     fileSize: $json.body.message?.document?.file_size || 0,     userName: $json.body.message?.from?.first_name || \"\",     chatId: $json.body.message?.chat?.id || \"\"   }) }}",
               "type": "string"
             },
             {
               "id": "0e732c1e-5c23-4edc-b83d-4a930d71ee0a",
               "name": "imageUrl",
-              "value": "={{ $('chat_bot').item.json.body.message.photo_url || \"\" }}",
+              "value": "={{ $json.body.message.photo_url || \"\" }}",
               "type": "string"
             },
             {
@@ -332,7 +466,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "={{ $json.content?.parts?.[0]?.text || $json.content || $json.input || $json.text || $('chat_bot').item.json.body.message.text || $json.prompt || $json.body.message.text || $json.imageUrl ||\"\" }}",
+        "text": "={{ $json.content?.parts?.[0]?.text || $json.content || $json.input || $json.text || $json.body.message.text || $json.prompt || $json.body.message.text || $json.imageUrl ||\"\" }}",
         "options": {
           "systemMessage": "# ⛔ CẢNH BÁO: ĐỌC KỸ TRƯỚC KHI LÀM BẤT CỨ ĐIỀU GÌ\n\n## 🚫 TUYỆT ĐỐI CẤM TỰ TRẢ LỜI\n\nBạn là DISPATCHER (Điều phối viên), KHÔNG PHẢI chuyên gia.\n\n❌ BẠN KHÔNG ĐƯỢC:\n- Tự trả lời câu hỏi về giá cả, sản phẩm, vật liệu\n- Tự tính toán bất kỳ con số nào\n- Tự tạo báo giá\n- Trả lời \"em cần thêm thông tin\" mà không gọi tool\n\n✅ BẠN CHỈ ĐƯỢC:\n- Nhận yêu cầu → Gọi tool → Trả kết quả từ tool\n- Hỏi lại sếp NẾU không hiểu yêu cầu\n\n---\n\n## 📋 BẢNG GỌI TOOL BẮT BUỘC\n\n| Khi sếp nói | GỌI NGAY tool này |\n|-------------|-------------------|\n| báo giá, tính giá, giá bao nhiêu, tạo đơn, lên đơn, tủ, bàn, ghế, giường, kệ, sản phẩm, vật liệu, gỗ | **Tro ly ke toan** |\n| tồn kho, còn hàng, số lượng, kiểm tra kho | Tro ly kho |\n| tiến độ, thi công, lịch làm việc, nhân sự | Tro ly thi cong |\n| email, gửi mail, viết mail | Tro ly mail |\n| lịch hẹn, đặt lịch, xem lịch | Tro ly lich |\n| bản vẽ, kỹ thuật, CAD, thiết kế | Tro ly ky thuat |\n| buồn, vui, tâm sự, thời tiết, tin tức | Tro ly thong thai |\n\n---\n\n## ✅ VÍ DỤ ĐÚNG (LÀM THEO)\n\n### Ví dụ 1: Tạo báo giá\nUser: \"Tạo báo giá cho khách A, 2 tủ quần áo\"\n→ GỌI tool \"Tro ly ke toan\" với input: \"Tạo báo giá cho khách A, 2 tủ quần áo\"\n→ Trả về kết quả từ tool\n\n### Ví dụ 2: Hỏi giá\nUser: \"Giá gỗ sồi bao nhiêu?\"\n→ GỌI tool \"Tro ly ke toan\" với input: \"Giá gỗ sồi bao nhiêu?\"\n→ Trả về kết quả từ tool\n\n### Ví dụ 3: Tạo lại báo giá\nUser: \"Tạo lại báo giá\"\n→ GỌI tool \"Tro ly ke toan\" với input: \"Tạo lại báo giá\"\n→ Trả về kết quả từ tool\n\n---\n\n## ❌ VÍ DỤ SAI (TUYỆT ĐỐI KHÔNG LÀM)\n\nUser: \"Tạo báo giá cho khách A\"\n❌ SAI: \"Dạ sếp, để tạo báo giá em cần thêm thông tin về sản phẩm...\"\n❌ SAI: \"Sếp muốn báo giá sản phẩm gì ạ?\"\n❌ SAI: Tự liệt kê thông tin sản phẩm\n\n✅ ĐÚNG: Gọi tool \"Tro ly ke toan\" với input gốc, để tool đó tự hỏi thêm nếu cần\n\n---\n\n# OVERVIEW\n\nBạn là Trợ lý AI chính (Dispatcher) của xưởng nội thất MinhKhoa.\n\n**Nhiệm vụ DUY NHẤT:** Nhận yêu cầu → Gọi tool phù hợp → Trả kết quả từ tool\n\n# TOOLS\n\n1. **Tro ly ke toan** ⭐ QUAN TRỌNG NHẤT\n   - Dùng cho: báo giá, tính toán, giá cả, sản phẩm, vật liệu, tủ, bàn, ghế, gỗ\n   - Input: Toàn bộ yêu cầu của sếp (copy nguyên văn)\n\n2. **Tro ly kho**: Tồn kho, số lượng, kiểm tra hàng\n\n3. **Tro ly thi cong**: Tiến độ, thi công, nhân sự\n\n4. **Tro ly thong thai**: Tâm sự, chủ đề ngoài công việc\n\n5. **Tro ly mail**: Email\n\n6. **Tro ly lich**: Lịch hẹn\n\n7. **Tro ly ky thuat**: Bản vẽ, kỹ thuật, CAD\n\n8. **Search in Tavily**: Tìm kiếm thông tin MỚI NHẤT trên internet\n   - CHỈ dùng khi: giá thị trường, tin tức thời sự, đối thủ cạnh tranh, xu hướng mới\n   - KHÔNG dùng cho: giá sản phẩm của công ty, quy định nội bộ\n\n9. **Save Knowledge (Write)**: Ghi nhớ kiến thức mới\n   - Dùng khi: sếp dạy điều mới, sửa sai, hoặc tìm được thông tin hữu ích từ Tavily\n\n10. **Think**: Khi cần suy nghĩ phức tạp\n\n---\n\n# 🔍 QUY TẮC TÌM KIẾM (TAVILY)\n\n## ✅ KHI NÀO DÙNG \"Search in Tavily\"\n\n**CHỈ dùng khi sếp hỏi về:**\n- ✅ **Giá thị trường**: \"Giá gỗ sồi trên thị trường hiện tại?\", \"Giá ngoài bao nhiêu?\"\n- ✅ **Tin tức thời sự**: \"Tin tức mới nhất về nội thất\", \"Xu hướng nội thất 2025\"\n- ✅ **Đối thủ cạnh tranh**: \"Đối thủ của chúng ta là ai?\", \"So sánh với công ty X\"\n- ✅ **Xu hướng mới**: \"Xu hướng thiết kế mới nhất\", \"Mẫu tủ quần áo hot hiện tại\"\n\n## ❌ KHI NÀO KHÔNG DÙNG TAVILY\n\n**TUYỆT ĐỐI KHÔNG dùng khi:**\n- ❌ Hỏi về **giá sản phẩm của xưởng MinhKhoa** → Dùng \"Tro ly ke toan\"\n- ❌ Hỏi về **quy định nội bộ** → Kiểm tra \"KIẾN THỨC ĐÃ HỌC\" trước\n- ❌ Hỏi về **quy trình làm việc** → Kiểm tra \"KIẾN THỨC ĐÃ HỌC\" trước\n- ❌ Hỏi về **thông tin khách hàng** → Kiểm tra \"KIẾN THỨC ĐÃ HỌC\" trước\n\n### Ví dụ:\nUser: \"Giá gỗ sồi của xưởng mình bao nhiêu?\"\n→ ❌ SAI: Gọi \"Search in Tavily\"\n→ ✅ ĐÚNG: Gọi \"Tro ly ke toan\"\n\nUser: \"Giá gỗ sồi trên thị trường hiện tại?\"\n→ ✅ ĐÚNG: Gọi \"Search in Tavily\"\n\n---\n\n# 💾 QUY TẮC GHI NHỚ (ACTIVE LEARNING)\n\n## 🎯 TỰ ĐỘNG GHI NHỚ - LUÔN THỰC HIỆN\n\nSau khi có kết quả từ bất kỳ tool nào, **TỰ ĐỘNG đánh giá và ghi nhớ** nếu thông tin hữu ích:\n\n### 1. Sau khi tìm được thông tin từ Tavily:\nBước 1: Gọi \"Search in Tavily\" → Nhận kết quả\nBước 2: Đánh giá: Kết quả có hữu ích không? (có answer dài >100 ký tự, có thông tin cụ thể)\nBước 3: NẾU hữu ích → TỰ ĐỘNG gọi \"Save Knowledge (Write)\" với format:\n  - query: \"[WEB] Tóm tắt nội dung chính từ kết quả Tavily\"\n  - action: \"save\"\n  - category: \"market_info\" hoặc \"trend\" hoặc \"competitor\" (tùy loại)\n\n### 2. Sau khi được sếp sửa sai:\nUser: \"Sai rồi, giá gỗ sồi phải là 15 triệu/m3\"\n→ Bước 1: Gọi \"Save Knowledge (Write)\" ngay lập tức\n→ Bước 2: query: \"Giá gỗ sồi là 15 triệu/m3\"\n→ Bước 3: action: \"save\"\n→ Bước 4: category: \"correction\" hoặc \"pricing\"\n\n### 3. Sau khi sếp dạy điều mới:\nUser: \"Nhớ là khách A thích màu trắng\"\n→ GỌI NGAY \"Save Knowledge (Write)\" với:\n  - query: \"Khách A thích màu trắng\"\n  - action: \"save\"\n  - category: \"customer_preference\"\n\n### 4. Định dạng lưu trữ:\nFormat: [NGUỒN] Nội dung chính\n\nVí dụ:\n- \"[WEB] Giá gỗ sồi thị trường hiện tại: 12-15 triệu/m3 (2025)\"\n- \"[USER] Giá gỗ sồi của xưởng: 15 triệu/m3\"\n- \"[CORRECTION] Khách A thích màu trắng, không phải đen\"\n\n---\n\n# 📖 QUY TẮC PHẢN HỒI\n\n## BƯỚC 1: KIỂM TRA KIẾN THỨC ĐÃ HỌC TRƯỚC\n\n**LUÔN kiểm tra phần \"KIẾN THỨC ĐÃ HỌC\" trong context trước khi trả lời:**\n\n1. Đọc kỹ phần \"KIẾN THỨC ĐÃ HỌC\" (nếu có)\n2. Tìm kiến thức liên quan đến câu hỏi\n3. NẾU có kiến thức phù hợp → ƯU TIÊN sử dụng\n4. NẾU không có → Mới gọi tool tìm kiếm\n\n### Ví dụ:\nContext có: \"• [pricing] Giá gỗ sồi: 15 triệu/m3\"\nUser hỏi: \"Giá gỗ sồi bao nhiêu?\"\n→ ✅ ĐÚNG: Trả lời dựa trên kiến thức đã học\n→ ❌ SAI: Gọi \"Tro ly ke toan\" hoặc \"Search in Tavily\"\n\n## BƯỚC 2: XỬ LÝ MÂU THUẪN\n\n**Nếu kiến thức trong bộ nhớ mâu thuẫn với kết quả search mới:**\n\n1. Phát hiện mâu thuẫn: Kiến thức cũ vs Kết quả mới\n2. ƯU TIÊN kết quả mới nhất (từ Tavily hoặc từ sếp)\n3. TỰ ĐỘNG update bộ nhớ:\n   - Gọi \"Save Knowledge (Write)\" với thông tin mới\n   - Format: \"[CORRECTION] Thông tin mới (thay thế thông tin cũ)\"\n4. Trả lời: \"Em đã cập nhật thông tin mới nhất...\"\n\n### Ví dụ:\nKiến thức cũ: \"Giá gỗ sồi: 12 triệu/m3\"\nTavily trả về: \"Giá gỗ sồi thị trường 2025: 15 triệu/m3\"\n→ Bước 1: Phát hiện mâu thuẫn\n→ Bước 2: Ưu tiên kết quả mới (15 triệu)\n→ Bước 3: TỰ ĐỘNG gọi \"Save Knowledge (Write)\":\n  - query: \"[CORRECTION] Giá gỗ sồi thị trường 2025: 15 triệu/m3 (thay thế 12 triệu)\"\n  - action: \"save\"\n→ Bước 4: Trả lời: \"Dạ sếp, theo thông tin mới nhất, giá gỗ sồi thị trường hiện tại là 15 triệu/m3. Em đã cập nhật vào bộ nhớ.\"\n\n## BƯỚC 3: TỔNG HỢP THÔNG TIN\n\n**Khi có nhiều nguồn thông tin:**\n\n1. Kiến thức đã học (từ RAG)\n2. Kết quả từ Tavily (nếu có)\n3. Kết quả từ tool khác\n\n→ Tổng hợp tất cả, ưu tiên:\n   - Thông tin mới nhất (từ Tavily)\n   - Thông tin từ sếp (từ RAG)\n   - Thông tin từ tool chuyên môn (Tro ly ke toan, etc.)\n\n---\n\n# OUTPUT FORMAT\n\n1. Text thuần, KHÔNG dùng markdown (**, ##, ```)\n2. Xưng hô: \"em\" - \"sếp\"\n3. Chỉ chào ở lần tương tác ĐẦU TIÊN\n4. KHÔNG nói \"em đã chuyển cho trợ lý...\"\n5. Trả kết quả TRỰC TIẾP từ tool\n\n# RESPONSE TYPE (Ghi ở cuối response)\n\nSau khi có kết quả từ tool, ghi thêm:\n\n- RESPONSE_TYPE: \"quote_new\" - Khi tạo báo giá mới (có ảnh + PDF)\n- RESPONSE_TYPE: \"send_pdf\" - Khi gửi lại PDF\n- RESPONSE_TYPE: \"send_image\" - Khi gửi lại ảnh\n- RESPONSE_TYPE: \"text_only\" - Khi trả lời text thông thường\n\n---\n\n# ⚠️ NHẮC LẠI LẦN CUỐI\n\n**KHÔNG BAO GIỜ TỰ TRẢ LỜI VỀ:**\n- Giá cả\n- Sản phẩm\n- Vật liệu\n- Tính toán\n- Báo giá\n\n**LUÔN GỌI TOOL \"Tro ly ke toan\" cho các yêu cầu trên!**\n\n## KIẾN THỨC ĐÃ HỌC\n{{ $json.learningContext }}\n\n---\n\n# 🎓 TÓM TẮT QUY TRÌNH ACTIVE LEARNING\n\n## Luồng xử lý một câu hỏi:\n\n1. ĐỌC \"KIẾN THỨC ĐÃ HỌC\" → Có thông tin liên quan không?\n   ├─ CÓ → Sử dụng, nhưng kiểm tra tính cập nhật\n   └─ KHÔNG → Bước 2\n\n2. PHÂN TÍCH INTENT → Cần tìm kiếm web không?\n   ├─ Giá thị trường/Tin tức/Đối thủ/Xu hướng → Gọi \"Search in Tavily\"\n   └─ Giá công ty/Quy định nội bộ → Gọi \"Tro ly ke toan\" hoặc tool khác\n\n3. NHẬN KẾT QUẢ → Đánh giá và ghi nhớ\n   ├─ Từ Tavily → TỰ ĐỘNG gọi \"Save Knowledge (Write)\" nếu hữu ích\n   ├─ Từ sếp sửa sai → TỰ ĐỘNG gọi \"Save Knowledge (Write)\" ngay\n   └─ Phát hiện mâu thuẫn → Update bộ nhớ với thông tin mới\n\n4. TRẢ LỜI → Tổng hợp từ tất cả nguồn, ưu tiên thông tin mới nhất\n\n---\n\n# ✅ CHECKLIST TRƯỚC KHI TRẢ LỜI\n\n- Đã kiểm tra \"KIẾN THỨC ĐÃ HỌC\"?\n- Đã chọn đúng tool? (Tavily chỉ cho giá thị trường/tin tức/đối thủ/xu hướng)\n- Đã tự động ghi nhớ thông tin hữu ích?\n- Đã xử lý mâu thuẫn (nếu có)?\n- Đã tổng hợp thông tin từ nhiều nguồn?\n- Đã ghi RESPONSE_TYPE ở cuối?\n\n",
           "returnIntermediateSteps": true
@@ -641,37 +775,37 @@
             {
               "id": "5e9f46cd-4af5-42ac-b18e-473ae9c78ee1",
               "name": "file_id",
-              "value": "={{ $('chat_bot1').item.json.message.document.file_id }}",
+              "value": "={{ $json.body.message.document.file_id }}",
               "type": "string"
             },
             {
               "id": "b3f55b7b-52f4-4e47-8d7e-72d8d74f6979",
               "name": "file_name",
-              "value": "={{ $('chat_bot1').item.json.message.document.file_name }}",
+              "value": "={{ $json.body.message.document.file_name }}",
               "type": "string"
             },
             {
               "id": "7fa10781-7b35-4111-b855-1759e8a04abb",
               "name": "file_size",
-              "value": "={{ $('chat_bot1').item.json.message.document.file_size }}",
+              "value": "={{ $json.body.message.document.file_size }}",
               "type": "number"
             },
             {
               "id": "d52661be-f338-4431-a643-ab13690ffa77",
               "name": "mine_type",
-              "value": "={{ $('chat_bot1').item.json.message.document.mime_type }}",
+              "value": "={{ $json.body.message.document.mime_type }}",
               "type": "string"
             },
             {
               "id": "434023a4-2a87-4a84-92c6-57d3592802c0",
               "name": "file_extension",
-              "value": "={{ $('chat_bot1').item.json.message.document.file_name.split('.').pop().toLowerCase() }}",
+              "value": "={{ $json.body.message.document.file_name.split('.').pop().toLowerCase() }}",
               "type": "string"
             },
             {
               "id": "6457640a-2104-48fe-a47b-000f8e556039",
               "name": "caption",
-              "value": "={{ $('chat_bot1').item.json.message.caption || '' }}",
+              "value": "={{ $json.body.message.caption || '' }}",
               "type": "string"
             }
           ]
@@ -799,7 +933,7 @@
           "parameters": [
             {
               "name": "chat_id",
-              "value": "={{ $('chat_bot').item.json.body.message.chat.id }}"
+              "value": "={{ $json.body.message.chat.id }}"
             },
             {
               "name": "text",
@@ -837,7 +971,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $('chat_bot').item.json.body.message.photo_url }}",
+        "url": "={{ $json.body.message.photo_url }}",
         "options": {
           "response": {
             "response": {
@@ -1111,7 +1245,7 @@
           "conditions": [
             {
               "id": "dd907e87-49ce-4525-862c-54059820173b",
-              "leftValue": "={{ $('chat_bot').first().json.body.message.caption || $json.caption || '' }}",
+              "leftValue": "={{ $json.body.message.caption || $json.caption || '' }}",
               "rightValue": "phân tích",
               "operator": {
                 "type": "string",
@@ -1120,7 +1254,7 @@
             },
             {
               "id": "d22d6c30-11fb-4d49-a43a-ee458ac670f7",
-              "leftValue": "={{ $('chat_bot').first().json.body.message.caption || $json.caption || '' }}",
+              "leftValue": "={{ $json.body.message.caption || $json.caption || '' }}",
               "rightValue": "xem",
               "operator": {
                 "type": "string",
@@ -1129,7 +1263,7 @@
             },
             {
               "id": "7ce92bce-4a09-477f-905c-dccb07e5e129",
-              "leftValue": "={{ $('chat_bot').first().json.body.message.caption || $json.caption || '' }}",
+              "leftValue": "={{ $json.body.message.caption || $json.caption || '' }}",
               "rightValue": "đọc",
               "operator": {
                 "type": "string",
@@ -1138,7 +1272,7 @@
             },
             {
               "id": "f420f5d0-2c66-42b8-8647-6c342f306b59",
-              "leftValue": "={{ $('chat_bot').first().json.body.message.caption || $json.caption || '' }}",
+              "leftValue": "={{ $json.body.message.caption || $json.caption || '' }}",
               "rightValue": "analyze",
               "operator": {
                 "type": "string",
@@ -1147,7 +1281,7 @@
             },
             {
               "id": "e5b80510-f153-43cd-8cb7-5da472023b88",
-              "leftValue": "={{ $('chat_bot').first().json.body.message.caption || $json.caption || '' }}",
+              "leftValue": "={{ $json.body.message.caption || $json.caption || '' }}",
               "rightValue": "=mô tả",
               "operator": {
                 "type": "string",
@@ -1156,7 +1290,7 @@
             },
             {
               "id": "25a3e8c6-d7ae-4f20-8983-aee8a72e6449",
-              "leftValue": "={{ $('chat_bot').first().json.body.message.caption || $json.caption || '' }}",
+              "leftValue": "={{ $json.body.message.caption || $json.caption || '' }}",
               "rightValue": "là gì",
               "operator": {
                 "type": "string",
@@ -1179,7 +1313,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $('chat_bot').item.json.body.message.from.id }}",
+        "url": "={{ $json.body.message.from.id }}",
         "options": {
           "response": {
             "response": {
@@ -1295,7 +1429,7 @@
           "parameters": [
             {
               "name": "chat_id",
-              "value": "={{ $('chat_bot').item.json.body.message.chat.id }}"
+              "value": "={{ $json.body.message.chat.id }}"
             },
             {
               "name": "text",
@@ -1459,7 +1593,7 @@
           "parameters": [
             {
               "name": "chat_id",
-              "value": "={{ $('chat_bot').first().json.body.message.chat.id }}"
+              "value": "={{ $json.body.message.chat.id }}"
             },
             {
               "name": "photo",
@@ -1491,7 +1625,7 @@
           "parameters": [
             {
               "name": "chat_id",
-              "value": "={{ $('chat_bot').first().json.body.message.chat.id }}"
+              "value": "={{ $json.body.message.chat.id }}"
             },
             {
               "name": "text",
@@ -1519,7 +1653,7 @@
           "parameters": [
             {
               "name": "chat_id",
-              "value": "={{ $('chat_bot').first().json.body.message.chat.id }}"
+              "value": "={{ $json.body.message.chat.id }}"
             },
             {
               "name": "sticker",
@@ -1547,7 +1681,7 @@
           "parameters": [
             {
               "name": "chat_id",
-              "value": "={{ $('chat_bot').first().json.body.message.chat.id }}"
+              "value": "={{ $json.body.message.chat.id }}"
             },
             {
               "name": "text",
@@ -1575,7 +1709,7 @@
           "parameters": [
             {
               "name": "chat_id",
-              "value": "={{ $('chat_bot').first().json.body.message.chat.id }}"
+              "value": "={{ $json.body.message.chat.id }}"
             },
             {
               "name": "photo",
@@ -1607,7 +1741,7 @@
           "parameters": [
             {
               "name": "chat_id",
-              "value": "={{ $('chat_bot').first().json.body.message.chat.id }}"
+              "value": "={{ $json.body.message.chat.id }}"
             },
             {
               "name": "text",
@@ -1695,7 +1829,7 @@
           "parameters": [
             {
               "name": "chat_id",
-              "value": "={{ $('chat_bot').first().json.body.message.chat.id }}"
+              "value": "={{ $json.body.message.chat.id }}"
             },
             {
               "name": "photo",
@@ -1833,7 +1967,7 @@
           "parameters": [
             {
               "name": "chat_id",
-              "value": "={{ $('chat_bot').first().json.body.message.chat.id }}"
+              "value": "={{ $json.body.message.chat.id }}"
             },
             {
               "name": "text",
@@ -1875,7 +2009,7 @@
           "parameters": [
             {
               "name": "chat_id",
-              "value": "={{ $('chat_bot').first().json.body.message.chat.id }}"
+              "value": "={{ $json.body.message.chat.id }}"
             },
             {
               "name": "text",
@@ -1896,7 +2030,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Get all items from input\nconst inputItems = $input.all();\n\nfor (let i = 0; i < inputItems.length; i++) {\n  const item = inputItems[i];\n  \n  // Lấy photo_url từ chat_bot\n  try {\n    const chatBotData = $('chat_bot').first().json;\n    item.json.photo_url = chatBotData?.body?.message?.photo_url || '';\n  } catch (e) {\n    item.json.photo_url = '';\n  }\n\n  // Fix MIME type nếu cần\n  if (item.binary && item.binary.data) {\n    if (item.binary.data.mimeType === 'image/jpg') {\n      item.binary.data.mimeType = 'image/jpeg';\n      item.binary.data.fileExtension = 'jpeg';\n    }\n  }\n}\n\nreturn inputItems;"
+        "jsCode": "// Get all items from input\nconst inputItems = $input.all();\n\nfor (let i = 0; i < inputItems.length; i++) {\n  const item = inputItems[i];\n  \n  // Lấy photo_url từ queue data\n  try {\n    const queueData = $('Convert Queue Data').first().json;\n    item.json.photo_url = queueData?.body?.message?.photo_url || '';\n  } catch (e) {\n    item.json.photo_url = '';\n  }\n\n  // Fix MIME type nếu cần\n  if (item.binary && item.binary.data) {\n    if (item.binary.data.mimeType === 'image/jpg') {\n      item.binary.data.mimeType = 'image/jpeg';\n      item.binary.data.fileExtension = 'jpeg';\n    }\n  }\n}\n\nreturn inputItems;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -1917,7 +2051,7 @@
           "parameters": [
             {
               "name": "chat_id",
-              "value": "={{ $('chat_bot').item.json.body.message.from.id }}"
+              "value": "={{ $json.body.message.from.id }}"
             },
             {
               "name": "action",
@@ -2073,7 +2207,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Detect knowledge mới cần học\nlet agentOutput = '';\nlet userInput = '';\n\ntry {\n  agentOutput = $('Tro ly chinh').first().json.output || '';\n} catch (e) {\n  agentOutput = '';\n}\n\ntry {\n  userInput = $('Input').first().json.content || \n              $('Input').first().json.prompt || \n              $('chat_bot').first().json.body?.message?.text || '';\n} catch (e) {\n  userInput = '';\n}\n\n// Patterns cần học\nconst learnPatterns = [\n  { pattern: /nhớ (là|rằng|nhé)/i, category: 'knowledge' },\n  { pattern: /ghi nhớ/i, category: 'knowledge' },\n  { pattern: /từ (giờ|nay)/i, category: 'preference' },\n  { pattern: /quy định (mới|là)/i, category: 'process' },\n  { pattern: /sai rồi.*(đúng là|phải là)/i, category: 'correction' },\n  { pattern: /không phải.*(mà là|là)/i, category: 'correction' }\n];\n\nlet shouldLearn = false;\nlet category = 'general';\nlet contentToLearn = userInput;\n\nfor (const item of learnPatterns) {\n  if (item.pattern.test(userInput)) {\n    shouldLearn = true;\n    category = item.category;\n    break;\n  }\n}\n\n// Nếu agent xác nhận đã học\nif (agentOutput.toLowerCase().includes('đã ghi nhớ') || \n    agentOutput.toLowerCase().includes('em nhớ rồi')) {\n  shouldLearn = true;\n}\n\nreturn [{\n  json: {\n    shouldLearn: shouldLearn,\n    contentToLearn: contentToLearn,\n    category: category\n  }\n}];"
+        "jsCode": "// Detect knowledge mới cần học\nlet agentOutput = '';\nlet userInput = '';\n\ntry {\n  agentOutput = $('Tro ly chinh').first().json.output || '';\n} catch (e) {\n  agentOutput = '';\n}\n\ntry {\n  userInput = $('Input').first().json.content || \n              $('Input').first().json.prompt || \n              $('Convert Queue Data').first().json.body?.message?.text || '';\n} catch (e) {\n  userInput = '';\n}\n\n// Patterns cần học\nconst learnPatterns = [\n  { pattern: /nhớ (là|rằng|nhé)/i, category: 'knowledge' },\n  { pattern: /ghi nhớ/i, category: 'knowledge' },\n  { pattern: /từ (giờ|nay)/i, category: 'preference' },\n  { pattern: /quy định (mới|là)/i, category: 'process' },\n  { pattern: /sai rồi.*(đúng là|phải là)/i, category: 'correction' },\n  { pattern: /không phải.*(mà là|là)/i, category: 'correction' }\n];\n\nlet shouldLearn = false;\nlet category = 'general';\nlet contentToLearn = userInput;\n\nfor (const item of learnPatterns) {\n  if (item.pattern.test(userInput)) {\n    shouldLearn = true;\n    category = item.category;\n    break;\n  }\n}\n\n// Nếu agent xác nhận đã học\nif (agentOutput.toLowerCase().includes('đã ghi nhớ') || \n    agentOutput.toLowerCase().includes('em nhớ rồi')) {\n  shouldLearn = true;\n}\n\nreturn [{\n  json: {\n    shouldLearn: shouldLearn,\n    contentToLearn: contentToLearn,\n    category: category\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -2364,6 +2498,45 @@
       ],
       "id": "df988e16-9391-46b8-953e-d2d44b8149aa",
       "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://zamexodnbxgmazdnajtd.supabase.co/rest/v1/message_queue?id=eq.{{ $('Convert Queue Data').first().json.queue_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphbWV4b2RuYnhnbWF6ZG5hanRkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjU5ODM1MiwiZXhwIjoyMDgyMTc0MzUyfQ.mAC3J7FD9ZY3RJL3hf7QSly_QoelpVmhERIe0NPnQHA"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphbWV4b2RuYnhnbWF6ZG5hanRkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjU5ODM1MiwiZXhwIjoyMDgyMTc0MzUyfQ.mAC3J7FD9ZY3RJL3hf7QSly_QoelpVmhERIe0NPnQHA"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"status\": \"completed\",\n  \"completed_at\": {{ JSON.stringify($now.toISO()) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -200,
+        300
+      ],
+      "id": "mark-completed",
+      "name": "Mark Completed"
     }
   ],
   "pinData": {},
@@ -2603,11 +2776,55 @@
         ]
       ]
     },
-    "chat_bot": {
+    "Schedule Trigger": {
       "main": [
         [
           {
-            "node": "Send Processing Message",
+            "node": "Get Pending Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending Message": {
+      "main": [
+        [
+          {
+            "node": "Has message?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has message?": {
+      "main": [
+        [
+          {
+            "node": "Lock message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lock message": {
+      "main": [
+        [
+          {
+            "node": "Convert Queue Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert Queue Data": {
+      "main": [
+        [
+          {
+            "node": "Switch",
             "type": "main",
             "index": 0
           }
@@ -3066,11 +3283,127 @@
         ]
       ]
     },
-    "Respond to Webhook": {
+    "Send Text": {
       "main": [
         [
           {
-            "node": "Switch",
+            "node": "Mark Completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SendPhoto (Quote)": {
+      "main": [
+        [
+          {
+            "node": "SendMessage (After Photo)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SendMessage (After Photo)": {
+      "main": [
+        [
+          {
+            "node": "SendSticker (Success)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SendSticker (Success)": {
+      "main": [
+        [
+          {
+            "node": "Mark Completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SendMessage (PDF Only)": {
+      "main": [
+        [
+          {
+            "node": "Mark Completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SendPhoto (Image Only)": {
+      "main": [
+        [
+          {
+            "node": "Mark Completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SendMessage (Text Only)": {
+      "main": [
+        [
+          {
+            "node": "Mark Completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Photo": {
+      "main": [
+        [
+          {
+            "node": "Has PDF?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send PDF": {
+      "main": [
+        [
+          {
+            "node": "Split Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Completed",
             "type": "main",
             "index": 0
           }
