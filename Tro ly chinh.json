@@ -7,7 +7,7 @@
           "interval": [
             {
               "field": "seconds",
-              "secondsInterval": 2
+              "secondsInterval": 3
             }
           ]
         }
@@ -15,14 +15,15 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
-        -2576,
-        3024
+        -4688,
+        1328
       ],
-      "id": "b07a5249-9850-45b3-93c1-2a6b60f478ac",
+      "id": "573f4a3b-9c04-47f9-ae5b-e900fda0efb8",
       "name": "Schedule Trigger"
     },
     {
       "parameters": {
+        "method": "POST",
         "url": "https://zamexodnbxgmazdnajtd.supabase.co/rest/v1/rpc/get_ready_buffers",
         "sendHeaders": true,
         "headerParameters": {
@@ -34,19 +35,27 @@
             {
               "name": "Authorization",
               "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphbWV4b2RuYnhnbWF6ZG5hanRkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjU5ODM1MiwiZXhwIjoyMDgyMTc0MzUyfQ.mAC3J7FD9ZY3RJL3hf7QSly_QoelpVmhERIe0NPnQHA"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
             }
           ]
         },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"p_wait_seconds\": 2, \"p_limit\": 1}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -2368,
-        3024
+        -4480,
+        1328
       ],
-      "id": "b836cfe2-cdf3-42b8-8c65-71f2e70860bc",
-      "name": "Get Pending Message"
+      "id": "7d4e55d5-8392-479f-ba55-250e7b91d344",
+      "name": "Get Pending Message",
+      "alwaysOutputData": true
     },
     {
       "parameters": {
@@ -76,16 +85,16 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -2176,
-        3024
+        -4288,
+        1328
       ],
-      "id": "2d208db8-5d67-43a8-ac00-384e10ea4bfc",
+      "id": "bd5158f8-08c9-45ba-9084-6b93bc5c6151",
       "name": "Has message?"
     },
     {
       "parameters": {
         "method": "PATCH",
-        "url": "=https://zamexodnbxgmazdnajtd.supabase.co/rest/v1/message_buffer",
+        "url": "=https://zamexodnbxgmazdnajtd.supabase.co/rest/v1/message_buffer?id=eq.{{ $json.id }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -109,16 +118,16 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"status\": \"processing\",\n  \"processing_started_at\": {{ JSON.stringify($now.toISO()) }}\n}",
+        "jsonBody": "={\n  \"status\": \"processing\",\n  \"updated_at\": {{ JSON.stringify($now.toISO()) }}\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -1968,
-        3024
+        -4080,
+        1328
       ],
-      "id": "799ee0fa-8450-409c-a57b-54910a1138a1",
+      "id": "5ab49db2-7bca-478c-b7f8-18a396c6811c",
       "name": "Lock message"
     },
     {
@@ -128,10 +137,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1776,
-        3024
+        -3888,
+        1328
       ],
-      "id": "a1d4bed2-d14c-4108-8167-6f18f1a9746e",
+      "id": "7be4ca6f-a411-4f2a-b513-6aa46cd6dec4",
       "name": "Convert Queue Data"
     },
     {
@@ -141,10 +150,10 @@
       "type": "@n8n/n8n-nodes-langchain.toolThink",
       "typeVersion": 1.1,
       "position": [
-        1936,
-        3568
+        -128,
+        1872
       ],
-      "id": "7cd83a7a-62c2-4658-ad9f-ffc4ba9e57d5",
+      "id": "bae3d7d5-cc18-45a5-8441-3b3c2481737f",
       "name": "Think",
       "notesInFlow": false
     },
@@ -158,14 +167,14 @@
       "type": "@n8n/n8n-nodes-langchain.memoryMongoDbChat",
       "typeVersion": 1,
       "position": [
-        1792,
-        3568
+        -272,
+        1872
       ],
-      "id": "3662caeb-b09c-4e46-88c1-79ed83a39b75",
+      "id": "cf2d6b84-7026-4bbe-bc11-0f1e472de1a8",
       "name": "MongoDB Chat Memory",
       "credentials": {
         "mongoDb": {
-          "id": "wR5t7Mbd0bIPSXcv",
+          "id": "Vuo21cfiSVjXblIr",
           "name": "MongoDB account"
         }
       }
@@ -177,10 +186,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3296,
-        2880
+        1232,
+        1184
       ],
-      "id": "c4287d2d-4e9f-4511-ad57-4c16ff9b661c",
+      "id": "fbdcf61e-cc85-48a4-a541-619aabb54086",
       "name": "Clean Up",
       "onError": "continueRegularOutput"
     },
@@ -317,13 +326,13 @@
         },
         "options": {}
       },
-      "id": "1bc7ef39-fc2c-47af-ae96-c27a1d35d01f",
+      "id": "e1e723d7-3aee-4592-85db-cda15e81433c",
       "name": "Switch",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        -1584,
-        2960
+        -3648,
+        1264
       ],
       "onError": "continueErrorOutput"
     },
@@ -375,10 +384,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        128,
-        2976
+        -1936,
+        1280
       ],
-      "id": "25f3b769-11aa-470d-ad9e-0dac9e4f4c6b",
+      "id": "bbf411cb-82b7-4b48-9b31-372beaf7a0df",
       "name": "Input"
     },
     {
@@ -396,15 +405,15 @@
       "type": "@n8n/n8n-nodes-langchain.googleGemini",
       "typeVersion": 1,
       "position": [
-        -992,
-        2832
+        -3056,
+        1136
       ],
-      "id": "2a9cb7da-78a0-4d77-8814-d71b56241c5e",
+      "id": "45e538e6-37aa-42df-a44c-92bee373bd40",
       "name": "Transcribe a recording",
       "credentials": {
         "googlePalmApi": {
-          "id": "ivMQFozfvyKtTYit",
-          "name": "Google Gemini(PaLM) Api account"
+          "id": "asUjI24nITHkETAA",
+          "name": "Google Gemini(PaLM) Api account 2"
         }
       },
       "onError": "continueRegularOutput"
@@ -456,10 +465,10 @@
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2.2,
       "position": [
-        2336,
-        3568
+        272,
+        1872
       ],
-      "id": "d8e6ba37-2fd3-4d1d-92aa-da212dda29ad",
+      "id": "15040421-5d0b-49b1-a077-17e6954939a0",
       "name": "Tro ly Email"
     },
     {
@@ -474,10 +483,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3,
       "position": [
-        2064,
-        2976
+        0,
+        1280
       ],
-      "id": "bdaff07f-8f73-4e7f-ab68-19bab974a0ea",
+      "id": "cddaf09d-4c68-4967-892b-fd7f33deea41",
       "name": "Tro ly chinh",
       "onError": "continueErrorOutput"
     },
@@ -503,10 +512,10 @@
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2.2,
       "position": [
-        2464,
-        3568
+        400,
+        1872
       ],
-      "id": "9df9a539-4bb1-4f1e-af88-779b1ee8375f",
+      "id": "2b25e472-1ef0-4d02-aa5c-fd122a469d39",
       "name": "Tro ly lich"
     },
     {
@@ -583,10 +592,10 @@
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2.2,
       "position": [
-        2208,
-        3568
+        144,
+        1872
       ],
-      "id": "2ff72896-6809-4e52-8208-a6932c2fef6f",
+      "id": "ae32850a-404e-4535-bdb3-74282096bdc1",
       "name": "Tro ly ky thuat"
     },
     {
@@ -597,14 +606,14 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
       "position": [
-        -1792,
-        3968
+        -3856,
+        2272
       ],
-      "id": "73e3b964-760d-4f60-b475-df173f7ac6a9",
+      "id": "cfe786ec-c49e-48a2-894b-d6845ad397d2",
       "name": "OpenRouter Chat Model",
       "credentials": {
         "openRouterApi": {
-          "id": "MJfpFBAmvmcIM1N3",
+          "id": "zLSVA8kxO37jtO1g",
           "name": "OpenRouter account"
         }
       }
@@ -767,10 +776,10 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.3,
       "position": [
-        -784,
-        3408
+        -2848,
+        1712
       ],
-      "id": "d15f7cec-7a72-42f7-bd75-6245d66b92e9",
+      "id": "b1cfb79e-91e6-47f1-80c0-1baea10b87e9",
       "name": "Switch2"
     },
     {
@@ -821,10 +830,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -992,
-        3408
+        -3056,
+        1712
       ],
-      "id": "b14381ec-5d3f-4ae4-ae10-96186af958fa",
+      "id": "a1853931-53a1-4777-a449-4efb7753bfe4",
       "name": "Edit Fields",
       "onError": "continueRegularOutput"
     },
@@ -844,15 +853,15 @@
       "type": "@n8n/n8n-nodes-langchain.googleGemini",
       "typeVersion": 1,
       "position": [
-        -416,
-        3408
+        -2480,
+        1712
       ],
-      "id": "95f4a2cf-44db-4ff9-b8aa-a21cf56ca193",
+      "id": "6f074045-3451-4a31-8249-12f2de88f94c",
       "name": "Analyze document",
       "credentials": {
         "googlePalmApi": {
-          "id": "ivMQFozfvyKtTYit",
-          "name": "Google Gemini(PaLM) Api account"
+          "id": "asUjI24nITHkETAA",
+          "name": "Google Gemini(PaLM) Api account 2"
         }
       },
       "onError": "continueRegularOutput"
@@ -884,10 +893,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -416,
-        3600
+        -2480,
+        1904
       ],
-      "id": "80c369a6-8621-4bc0-8071-b42aeb16b0e8",
+      "id": "7f3be938-4efb-4866-a4ca-d6416f9ccfcb",
       "name": "If File Size < 20MB"
     },
     {
@@ -922,10 +931,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -144,
-        3440
+        -2208,
+        1744
       ],
-      "id": "7ed75443-b654-4f5e-bac9-0b5a744041c9",
+      "id": "5596942d-13dc-4b12-993f-999cee2c9147",
       "name": "CAD to PDF",
       "onError": "continueRegularOutput"
     },
@@ -951,10 +960,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        2464,
-        3088
+        400,
+        1392
       ],
-      "id": "789cf794-38da-487a-b825-48dc44215417",
+      "id": "b5ad27fc-74dc-4916-9f64-b2d2f8460668",
       "name": "Error Message1"
     },
     {
@@ -971,10 +980,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -1216,
-        3152
+        -3280,
+        1456
       ],
-      "id": "e9f5eb82-384f-4415-a9c9-fca335877e4f",
+      "id": "30ae910e-f3d3-4303-b3a8-5455441f9723",
       "name": "Download Image",
       "onError": "continueRegularOutput"
     },
@@ -986,10 +995,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -1216,
-        2832
+        -3280,
+        1136
       ],
-      "id": "93829b72-18f7-49c6-8e6e-6501e3176cb0",
+      "id": "24af2e8f-4de0-4c08-bfb6-a377c8197649",
       "name": "Download Voice",
       "onError": "continueRegularOutput"
     },
@@ -1102,16 +1111,16 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        3472,
-        2880
+        1408,
+        1184
       ],
-      "id": "e0799823-f6aa-42f1-8d2d-77d56db49aa9",
+      "id": "c361f785-cbc0-4604-88a9-ec70f9cff546",
       "name": "Agent Log",
       "retryOnFail": true,
       "maxTries": 5,
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "k9q7ceY6SMWzzelv",
+          "id": "XFnTKPAp5jRfLJcN",
           "name": "Google Sheets account"
         }
       }
@@ -1185,10 +1194,10 @@
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2.2,
       "position": [
-        2080,
-        3568
+        16,
+        1872
       ],
-      "id": "3a6a9d73-e605-4c6f-9805-e0faa8b78490",
+      "id": "090194d0-5b92-4261-810d-6241e2203d47",
       "name": "Tro ly ke toan"
     },
     {
@@ -1208,15 +1217,15 @@
       "type": "@n8n/n8n-nodes-langchain.googleGemini",
       "typeVersion": 1,
       "position": [
-        -512,
-        3072
+        -2576,
+        1376
       ],
-      "id": "c041b9a6-883f-4edd-bbf0-c59429c30aa1",
+      "id": "81e106a7-10a5-470c-bc00-c515e8a8b9d5",
       "name": "Analyze an image",
       "credentials": {
         "googlePalmApi": {
-          "id": "ivMQFozfvyKtTYit",
-          "name": "Google Gemini(PaLM) Api account"
+          "id": "asUjI24nITHkETAA",
+          "name": "Google Gemini(PaLM) Api account 2"
         }
       },
       "onError": "continueRegularOutput"
@@ -1293,10 +1302,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -784,
-        3152
+        -2848,
+        1456
       ],
-      "id": "ef663879-2e3d-4b31-8f63-1afe52e0513f",
+      "id": "656c47e3-8bec-403b-a616-e2d6d4068edb",
       "name": "Check Caption Analyze"
     },
     {
@@ -1313,10 +1322,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -1216,
-        3408
+        -3280,
+        1712
       ],
-      "id": "3de2c744-c6cd-4f59-8ffe-ba0bc1e68697",
+      "id": "8abde92b-362c-4665-b279-f7fc7f76e935",
       "name": "Download Documents",
       "onError": "continueRegularOutput"
     },
@@ -1327,15 +1336,15 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        -1952,
-        4208
+        -4016,
+        2512
       ],
-      "id": "aeffdcfb-18d8-4248-ab0b-63355d0a9498",
+      "id": "4b739e1c-0bae-4fd9-8cad-b9597d8ff354",
       "name": "Google Gemini Chat Model",
       "credentials": {
         "googlePalmApi": {
-          "id": "ivMQFozfvyKtTYit",
-          "name": "Google Gemini(PaLM) Api account"
+          "id": "asUjI24nITHkETAA",
+          "name": "Google Gemini(PaLM) Api account 2"
         }
       }
     },
@@ -1348,11 +1357,11 @@
           "parameters": [
             {
               "name": "url",
-              "value": "https://n8n.minhkhoaagent.top/webhook/zalo-gateway-new"
+              "value": "https://n8n-home.minhkhoaagent.top/webhook/zalo-gateway-new"
             },
             {
               "name": "secret_token",
-              "value": "agent123456"
+              "value": "12345678"
             }
           ]
         },
@@ -1361,10 +1370,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -2224,
-        4176
+        -4512,
+        2000
       ],
-      "id": "32b7bf58-4bb5-4d32-974c-96bc957b1ea9",
+      "id": "e240477e-1794-4721-89ea-9626979ffc6a",
       "name": "HTTP Request"
     },
     {
@@ -1389,10 +1398,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -144,
-        3712
+        -2208,
+        2016
       ],
-      "id": "444bafa8-9cb4-4a76-b4ea-aa38be8221f0",
+      "id": "839062b1-316c-4e06-a454-6a50672715d7",
       "name": "Error Message"
     },
     {
@@ -1437,10 +1446,10 @@
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2.2,
       "position": [
-        2592,
-        3568
+        528,
+        1872
       ],
-      "id": "40cf7de4-a6f5-4a11-8099-7d311f92ee80",
+      "id": "55d731e9-77db-4cdf-b505-7f0e5a37cdb3",
       "name": "Save Knowledge (Write)"
     },
     {
@@ -1451,14 +1460,14 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
       "typeVersion": 1,
       "position": [
-        1648,
-        3568
+        -416,
+        1872
       ],
-      "id": "706cb8f7-c6d7-4861-936c-0305beb6d2b2",
+      "id": "10729f3d-8913-4fb1-8643-b5213c5726af",
       "name": "Groq Chat Model",
       "credentials": {
         "groqApi": {
-          "id": "VkFyanoifIIhja6j",
+          "id": "ae6JkkHs31zWCVLF",
           "name": "Groq account"
         }
       }
@@ -1470,10 +1479,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3680,
-        2880
+        1616,
+        1184
       ],
-      "id": "fad8c4ac-58b8-4ee0-a9ef-395f70aaaf39",
+      "id": "aa0fc5b3-5b21-4f16-896e-168107e80f5a",
       "name": "Analyze and Get link",
       "onError": "continueRegularOutput"
     },
@@ -1503,10 +1512,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        4112,
-        2720
+        2048,
+        1024
       ],
-      "id": "17c41fe9-609c-4d54-aea9-3150eec89d24",
+      "id": "83413cde-aa3f-4441-9a11-defc519e406c",
       "name": "Send Photo",
       "onError": "continueRegularOutput"
     },
@@ -1557,10 +1566,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        3904,
-        2880
+        1840,
+        1184
       ],
-      "id": "b9fd2f3c-fb5e-416e-a4c3-6c5822379fb3",
+      "id": "b5fcf26c-cadc-41c5-82b6-ff5aea21cdbe",
       "name": "Has Image?"
     },
     {
@@ -1609,10 +1618,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        4352,
-        2880
+        2288,
+        1184
       ],
-      "id": "df96c524-bd70-4104-b468-4708e78ab138",
+      "id": "7bbd183b-8c29-4fab-8a4d-20aa3b79304a",
       "name": "Has PDF?"
     },
     {
@@ -1637,10 +1646,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        4592,
-        2720
+        2528,
+        1024
       ],
-      "id": "dfb74778-feb5-4a55-b68a-ef998f587e6d",
+      "id": "6db37102-1e2f-483c-8b78-719ee6497027",
       "name": "Send PDF",
       "onError": "continueRegularOutput"
     },
@@ -1651,10 +1660,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4832,
-        2880
+        2768,
+        1184
       ],
-      "id": "7f2c56e4-bcb9-48e9-9da3-d1074df828de",
+      "id": "d5c8c191-c771-475d-82e9-d1baed7ddd55",
       "name": "Split Text"
     },
     {
@@ -1679,10 +1688,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        5056,
-        2880
+        2992,
+        1184
       ],
-      "id": "96237535-26ab-45e4-9ccc-bcef4a80215b",
+      "id": "417ef5e2-62d6-4ba0-b8ab-cc054e3eccd0",
       "name": "Send Text"
     },
     {
@@ -1692,10 +1701,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -992,
-        3152
+        -3056,
+        1456
       ],
-      "id": "b505d534-987f-44fe-ba3a-6a2dc326b64e",
+      "id": "eb40f733-6921-416f-9957-7ec23269feb7",
       "name": "Fix Input Item",
       "onError": "continueRegularOutput"
     },
@@ -1721,10 +1730,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        3120,
-        2880
+        1056,
+        1184
       ],
-      "id": "07b9f51e-058f-4996-b709-9717074033ac",
+      "id": "d945634b-cb10-4451-8e27-280245caaf95",
       "name": "Send Processing Message2",
       "onError": "continueRegularOutput"
     },
@@ -1735,14 +1744,14 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        -1792,
-        4208
+        -3856,
+        2512
       ],
-      "id": "3cc11af4-a16a-4b68-b184-1a2d6da9077f",
+      "id": "2c36f5be-f825-4bf4-a86f-8c771ae824d9",
       "name": "Ollama Chat Model",
       "credentials": {
         "ollamaApi": {
-          "id": "ZeYl5rYP7Kr1YqY6",
+          "id": "ls4fhOAlwGlUVnoG",
           "name": "Ollama account"
         }
       }
@@ -1754,20 +1763,20 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1616,
-        2976
+        -448,
+        1280
       ],
-      "id": "e43724e1-b0ec-4da2-b257-06617ae5b58e",
+      "id": "2e023e5c-fdc4-4aea-bdc6-2ecdff0d653d",
       "name": "Merge Context"
     },
     {
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "r4F4YVmXVwKOH0Ne",
+          "value": "1mqMIdky7MtYXiVU",
           "mode": "list",
-          "cachedResultUrl": "/workflow/r4F4YVmXVwKOH0Ne",
-          "cachedResultName": "RAG Knowledge - Pinecone"
+          "cachedResultUrl": "/workflow/1mqMIdky7MtYXiVU",
+          "cachedResultName": "Tool - RAG Knowledge"
         },
         "workflowInputs": {
           "mappingMode": "defineBelow",
@@ -1815,11 +1824,12 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        560,
-        2976
+        -1504,
+        1280
       ],
-      "id": "ba6d966b-454c-4855-9304-f4ba46b91614",
-      "name": "Search Knowledge"
+      "id": "440d41dc-b33f-4072-9d21-05ebe90fb87d",
+      "name": "Search Knowledge",
+      "alwaysOutputData": true
     },
     {
       "parameters": {
@@ -1828,10 +1838,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        336,
-        2976
+        -1728,
+        1280
       ],
-      "id": "79fec34a-c49b-4903-ba65-5ea22303149f",
+      "id": "c5cc02ea-ecba-40a7-8730-a5df0a694edb",
       "name": "Prepare Smart Search"
     },
     {
@@ -1862,10 +1872,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        768,
-        2976
+        -1296,
+        1280
       ],
-      "id": "51226af9-e213-4208-92f2-94be2c47aa5e",
+      "id": "200c82c6-9ee6-4fd1-90f4-abb7b8a5265e",
       "name": "If"
     },
     {
@@ -1875,10 +1885,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2448,
-        2880
+        384,
+        1184
       ],
-      "id": "0df5d5af-323b-42e1-bd30-eac661c2dbe9",
+      "id": "c43ef470-283f-49a4-840b-25d5588e2eba",
       "name": "Detect New Knowledge"
     },
     {
@@ -1909,10 +1919,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2656,
-        2880
+        592,
+        1184
       ],
-      "id": "b328ba1c-5b2e-4cee-8b92-278593f7a5ff",
+      "id": "26a40856-dd7d-4626-8824-57d1ad102def",
       "name": "If Should Learn"
     },
     {
@@ -1969,10 +1979,10 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        2880,
-        2784
+        816,
+        1088
       ],
-      "id": "e50855ec-d044-41c7-a8b6-5261dc26a5c7",
+      "id": "de461410-f21e-4ed1-b455-4d127a0c42ea",
       "name": "Execute Save to RAG"
     },
     {
@@ -1987,14 +1997,14 @@
       "type": "@tavily/n8n-nodes-tavily.tavily",
       "typeVersion": 1,
       "position": [
-        976,
-        2880
+        -1088,
+        1184
       ],
-      "id": "17917473-17ea-434f-871c-c6ed7240d05b",
+      "id": "ca89d1de-ef98-4076-9bdb-362fce08e589",
       "name": "Search Tavily",
       "credentials": {
         "tavilyApi": {
-          "id": "pY0x9kpc8XPIIprO",
+          "id": "frJkAA30QYGrhpDL",
           "name": "Tavily account"
         }
       }
@@ -2006,10 +2016,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1184,
-        2880
+        -880,
+        1184
       ],
-      "id": "b15ef08a-c293-45e0-aae8-57c755834d64",
+      "id": "d4ddc12e-62d0-494c-bfa6-4ec9ffa17ce1",
       "name": "Check Tavily Quality"
     },
     {
@@ -2040,10 +2050,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1392,
-        2880
+        -672,
+        1184
       ],
-      "id": "1ac45c1b-e0f8-4e01-b7ad-b67e5897129d",
+      "id": "3aadf68d-5a4e-4f30-9419-3e3391984643",
       "name": "If Good Result"
     },
     {
@@ -2100,10 +2110,10 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        1616,
-        2784
+        -448,
+        1088
       ],
-      "id": "619e8a03-1d55-4d8a-80e8-35d50050283d",
+      "id": "7ebaf5f7-a78b-4900-8512-b0f409e9913b",
       "name": "Auto Save Web Knowledge"
     },
     {
@@ -2113,10 +2123,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1824,
-        2784
+        -240,
+        1088
       ],
-      "id": "b1e900f6-6579-4410-b278-28b306024519",
+      "id": "0595badf-a447-4adc-b79a-1bc4f80c5b65",
       "name": "Log Save Result"
     },
     {
@@ -2133,14 +2143,14 @@
       "type": "@tavily/n8n-nodes-tavily.tavilyTool",
       "typeVersion": 1,
       "position": [
-        2752,
-        3568
+        688,
+        1872
       ],
-      "id": "45c1a32f-9326-4caa-8a61-4bf4bc1f5d5d",
+      "id": "79e7d6dd-8257-4322-9f13-94a6aa97dffd",
       "name": "Search in Tavily",
       "credentials": {
         "tavilyApi": {
-          "id": "pY0x9kpc8XPIIprO",
+          "id": "frJkAA30QYGrhpDL",
           "name": "Tavily account"
         }
       }
@@ -2178,10 +2188,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        5280,
-        2880
+        3264,
+        1184
       ],
-      "id": "5ff6406e-add8-4b67-bc7b-77c105f0a61f",
+      "id": "c26ce549-3f31-490e-a743-4c696e252717",
       "name": "Mark Completed"
     }
   ],
@@ -2874,22 +2884,18 @@
           }
         ]
       ]
-    },
-    "HTTP Request": {
-      "main": [
-        []
-      ]
     }
   },
   "active": true,
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "availableInMCP": false
   },
-  "versionId": "3598228d-2acc-4132-b3a3-c6a78c781764",
+  "versionId": "93c5bb1d-493b-4833-aefe-8c6ddd9edd47",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "f79905368cdd8aefd97993159c6f1b332d2bef60e6af085cda589aa3db810691"
+    "instanceId": "69e895a6c5b8ce31f24bef11428401cf3ae06095d76628a1259bda113b4a62f2"
   },
-  "id": "frCGAUJ64i1bm8bB",
+  "id": "GuhAtN4BQpPTUYQ4",
   "tags": []
 }

@@ -23,10 +23,10 @@
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
       "position": [
-        -928,
+        -848,
         128
       ],
-      "id": "aa407dd8-7a4d-40f6-8759-d68f3f2513fb",
+      "id": "4b398f12-0ef1-45e6-bb98-f8879721d2cd",
       "name": "Workflow Trigger"
     },
     {
@@ -36,10 +36,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -688,
+        -608,
         128
       ],
-      "id": "5d992d3b-0163-4a3e-83c7-e9f1cefcfb0c",
+      "id": "752c0af8-2dab-4bf3-ba1e-6316741b9045",
       "name": "Parse Input"
     },
     {
@@ -103,10 +103,10 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        -448,
+        -368,
         112
       ],
-      "id": "b4d32944-f16d-4502-831b-f74fd0c58dab",
+      "id": "1ff24ee9-fa07-4016-a41e-b5ceff3953b0",
       "name": "Route Action"
     },
     {
@@ -142,10 +142,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        352,
+        432,
         0
       ],
-      "id": "aa0d4587-93df-4e5b-9f50-b7f3a4ba3e5c",
+      "id": "6e948ce4-f039-4336-ae3b-c8e3e4498e3d",
       "name": "Save to Supabase"
     },
     {
@@ -177,10 +177,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        352,
+        432,
         240
       ],
-      "id": "a65eebc3-db6b-4d4a-ab3e-54c22f4ac7f9",
+      "id": "a5b9cca4-203b-4bc3-a475-449d142b6dd9",
       "name": "Search Supabase",
       "alwaysOutputData": false
     },
@@ -191,10 +191,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        592,
+        672,
         0
       ],
-      "id": "734eef6e-47be-4376-88d6-5989204ee93b",
+      "id": "22674f9f-4ba6-4939-b5e7-bfd454d1636f",
       "name": "Format Save Result",
       "alwaysOutputData": true
     },
@@ -205,10 +205,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        592,
+        672,
         240
       ],
-      "id": "d99f334b-cade-4d34-9e00-1a8e6db286c5",
+      "id": "d51d9325-c69a-424a-82a4-6818e50795f2",
       "name": "Format Search Result",
       "alwaysOutputData": true
     },
@@ -224,16 +224,16 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -80,
+        0,
         0
       ],
-      "id": "dcd20bd4-1619-40b9-a6fd-f156d7220287",
+      "id": "84c7d991-5498-4276-a480-b6cde6a2e427",
       "name": "Get Embedding (Save)"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=AIzaSyBhRj9xQkHGoNC8SwMK3EtXSVJ8xYRxol0",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=AIzaSyA97SG8oJBa8KVve7KPIwibhzdK9lPEQUA",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({\n  \"model\": \"models/text-embedding-004\",\n  \"content\": {\n    \"parts\": [\n      {\n        \"text\": $json.query\n      }\n    ]\n  }\n}) }}",
@@ -242,10 +242,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -80,
+        0,
         240
       ],
-      "id": "690e8afe-6174-4b5e-be43-109cd4b31590",
+      "id": "ed678df6-acbe-4774-b078-c42623cd4264",
       "name": "Get Embedding (Search)"
     },
     {
@@ -255,10 +255,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        128,
+        208,
         0
       ],
-      "id": "7bce6616-2c79-4e13-a48a-ea82a1dc9ec3",
+      "id": "7c8bf330-4571-4257-8763-8efa001a38dc",
       "name": "Parse Embedding (Save)"
     },
     {
@@ -268,10 +268,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        128,
+        208,
         240
       ],
-      "id": "b099c3b2-af5b-48c8-a909-a95ad6a761c9",
+      "id": "7c990936-7846-40a3-b4eb-969ad2a7f457",
       "name": "Parse Embedding (Search)"
     }
   ],
@@ -387,15 +387,12 @@
   "active": true,
   "settings": {
     "executionOrder": "v1",
-    "timeSavedMode": "fixed",
-    "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
   },
-  "versionId": "b18b853a-a890-4851-ab9b-5a13a4a6aeed",
+  "versionId": "b43887c7-deed-456d-94d6-1c97f4f71ea4",
   "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "f79905368cdd8aefd97993159c6f1b332d2bef60e6af085cda589aa3db810691"
+    "instanceId": "69e895a6c5b8ce31f24bef11428401cf3ae06095d76628a1259bda113b4a62f2"
   },
-  "id": "BKK33Pu7stWD1pR1",
+  "id": "1mqMIdky7MtYXiVU",
   "tags": []
 }
