@@ -23,10 +23,10 @@
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
       "position": [
-        0,
-        300
+        -656,
+        144
       ],
-      "id": "workflow-trigger",
+      "id": "62d867cb-87a4-448c-81e1-5ba074cbe6f9",
       "name": "Workflow Trigger"
     },
     {
@@ -36,10 +36,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        220,
-        300
+        -448,
+        144
       ],
-      "id": "parse-input",
+      "id": "36338916-41d5-41c4-840f-b7c62dab47ae",
       "name": "Parse Input"
     },
     {
@@ -103,10 +103,10 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        440,
-        300
+        -224,
+        128
       ],
-      "id": "route-action",
+      "id": "7824b442-3a5b-4490-8eac-4645b1d628c7",
       "name": "Route Action"
     },
     {
@@ -130,10 +130,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        660,
-        180
+        0,
+        0
       ],
-      "id": "get-embedding-save",
+      "id": "09aff885-e974-46c8-bf7c-b29019cb933a",
       "name": "Get Embedding (Save)"
     },
     {
@@ -157,10 +157,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        660,
-        420
+        0,
+        240
       ],
-      "id": "get-embedding-search",
+      "id": "27b4cd9f-3df6-4734-82d5-a36c64be6792",
       "name": "Get Embedding (Search)"
     },
     {
@@ -170,10 +170,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        880,
-        180
+        224,
+        0
       ],
-      "id": "prepare-upsert",
+      "id": "00b4b811-e677-49eb-8a46-1cc8240be6f0",
       "name": "Prepare Upsert"
     },
     {
@@ -183,10 +183,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        880,
-        420
+        224,
+        240
       ],
-      "id": "prepare-search",
+      "id": "2edae9a6-eae5-4673-b2f5-0db2a0afba3e",
       "name": "Prepare Search"
     },
     {
@@ -214,10 +214,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        1100,
-        180
+        448,
+        0
       ],
-      "id": "pinecone-upsert",
+      "id": "8a93d8aa-9cc1-4500-aabd-0e4fd991a431",
       "name": "Pinecone Upsert"
     },
     {
@@ -245,10 +245,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        1100,
-        420
+        448,
+        240
       ],
-      "id": "pinecone-query",
+      "id": "38d245d1-8386-414d-98ff-966bea3876e3",
       "name": "Pinecone Query"
     },
     {
@@ -258,10 +258,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1320,
-        180
+        672,
+        0
       ],
-      "id": "format-save-result",
+      "id": "92ae5bf2-bf29-4649-af40-7760d4a2db6b",
       "name": "Format Save Result"
     },
     {
@@ -271,10 +271,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1320,
-        420
+        672,
+        240
       ],
-      "id": "format-search-result",
+      "id": "f7f5d233-a868-4ab1-882f-564fbb1f313d",
       "name": "Format Search Result"
     }
   ],
@@ -391,11 +391,10 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "rag-pinecone-v1",
+  "versionId": "0e3930c6-04a7-434b-b49a-0e82df3b99c5",
   "meta": {
-    "templateCredsSetupCompleted": true
+    "instanceId": "f79905368cdd8aefd97993159c6f1b332d2bef60e6af085cda589aa3db810691"
   },
-  "id": "rag-knowledge-pinecone",
+  "id": "r4F4YVmXVwKOH0Ne",
   "tags": []
 }
-

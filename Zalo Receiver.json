@@ -11,10 +11,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -400,
-        300
+        0,
+        0
       ],
-      "id": "webhook-receiver",
+      "id": "b80c50ce-f7fe-42cf-bb13-3d6b93aa1553",
       "name": "chat_bot",
       "webhookId": "2c429418-efa2-4357-ba0a-c02758bbd000"
     },
@@ -25,10 +25,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -200,
-        300
+        208,
+        0
       ],
-      "id": "prepare-queue-data",
+      "id": "fee130f3-371b-4bf7-aaf7-44327662f8a3",
       "name": "Prepare Queue Data"
     },
     {
@@ -64,10 +64,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        0,
-        300
+        400,
+        0
       ],
-      "id": "save-to-queue",
+      "id": "4084f71e-21fe-4c76-b4ad-304bd55d1c1d",
       "name": "Save to Supabase Queue"
     },
     {
@@ -81,10 +81,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        200,
-        300
+        608,
+        0
       ],
-      "id": "respond-webhook",
+      "id": "02e3e754-e8ea-4eea-a54b-237787a18ca8",
       "name": "Respond to Webhook"
     }
   ],
@@ -128,12 +128,10 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "zalo-receiver-v1",
+  "versionId": "06d9bbb6-90fe-4a45-a666-1386aefe8168",
   "meta": {
-    "templateCredsSetupCompleted": true
+    "instanceId": "f79905368cdd8aefd97993159c6f1b332d2bef60e6af085cda589aa3db810691"
   },
-  "id": "zalo-receiver-workflow",
+  "id": "qubfkldqch53uUKe",
   "tags": []
 }
-
-

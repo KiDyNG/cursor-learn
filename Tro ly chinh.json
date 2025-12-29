@@ -3,36 +3,169 @@
   "nodes": [
     {
       "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds",
+              "secondsInterval": 2
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -2576,
+        3024
+      ],
+      "id": "b07a5249-9850-45b3-93c1-2a6b60f478ac",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://zamexodnbxgmazdnajtd.supabase.co/rest/v1/rpc/get_ready_buffers",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphbWV4b2RuYnhnbWF6ZG5hanRkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjU5ODM1MiwiZXhwIjoyMDgyMTc0MzUyfQ.mAC3J7FD9ZY3RJL3hf7QSly_QoelpVmhERIe0NPnQHA"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphbWV4b2RuYnhnbWF6ZG5hanRkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjU5ODM1MiwiZXhwIjoyMDgyMTc0MzUyfQ.mAC3J7FD9ZY3RJL3hf7QSly_QoelpVmhERIe0NPnQHA"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -2368,
+        3024
+      ],
+      "id": "b836cfe2-cdf3-42b8-8c65-71f2e70860bc",
+      "name": "Get Pending Message"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has-message-check",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -2176,
+        3024
+      ],
+      "id": "2d208db8-5d67-43a8-ac00-384e10ea4bfc",
+      "name": "Has message?"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://zamexodnbxgmazdnajtd.supabase.co/rest/v1/message_buffer",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphbWV4b2RuYnhnbWF6ZG5hanRkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjU5ODM1MiwiZXhwIjoyMDgyMTc0MzUyfQ.mAC3J7FD9ZY3RJL3hf7QSly_QoelpVmhERIe0NPnQHA"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphbWV4b2RuYnhnbWF6ZG5hanRkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjU5ODM1MiwiZXhwIjoyMDgyMTc0MzUyfQ.mAC3J7FD9ZY3RJL3hf7QSly_QoelpVmhERIe0NPnQHA"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"status\": \"processing\",\n  \"processing_started_at\": {{ JSON.stringify($now.toISO()) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1968,
+        3024
+      ],
+      "id": "799ee0fa-8450-409c-a57b-54910a1138a1",
+      "name": "Lock message"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Convert queue message to format compatible with old workflow\nconst queueData = $input.first().json;\nconst rawData = queueData.raw_data || {};\n\n// Reconstruct message structure similar to webhook format\nreturn [{\n  json: {\n    body: {\n      message: {\n        text: queueData.text || \"\",\n        caption: queueData.caption || \"\",\n        photo_url: queueData.photo_url || \"\",\n        voice: queueData.voice_file_id ? { file_id: queueData.voice_file_id } : null,\n        document: queueData.document || null,\n        from: {\n          id: queueData.user_id,\n          first_name: queueData.user_name\n        },\n        chat: {\n          id: queueData.chat_id\n        },\n        message_id: queueData.message_id\n      }\n    },\n    // Keep queue data for reference\n    queue_id: queueData.id,\n    chat_id: queueData.chat_id,\n    user_id: queueData.user_id\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1776,
+        3024
+      ],
+      "id": "a1d4bed2-d14c-4108-8167-6f18f1a9746e",
+      "name": "Convert Queue Data"
+    },
+    {
+      "parameters": {
         "description": "Sử dụng công cụ này để suy nghĩ về một vấn đề nào đó. Nó sẽ không thu thập thông tin mới hoặc thay đổi cơ sở dữ liệu, mà chỉ thêm suy nghĩ đó vào nhật ký. Sử dụng công cụ này khi cần suy luận phức tạp hoặc bộ nhớ đệm."
       },
       "type": "@n8n/n8n-nodes-langchain.toolThink",
       "typeVersion": 1.1,
       "position": [
-        -3536,
-        1984
+        1936,
+        3568
       ],
-      "id": "2e2abc6c-65fd-4597-a689-aa98222bdf46",
+      "id": "7cd83a7a-62c2-4658-ad9f-ffc4ba9e57d5",
       "name": "Think",
       "notesInFlow": false
     },
     {
       "parameters": {
         "sessionIdType": "customKey",
-        "sessionKey": "={{ $('chat_bot').item.json.body.message.from.id }}",
+        "sessionKey": "={{ $json.body.message.from.id }}",
         "databaseName": "MinhKhoaAI",
         "contextWindowLength": 50
       },
       "type": "@n8n/n8n-nodes-langchain.memoryMongoDbChat",
       "typeVersion": 1,
       "position": [
-        -3680,
-        1984
+        1792,
+        3568
       ],
-      "id": "e5e7e609-1aea-4aec-b94a-950eedf5401a",
+      "id": "3662caeb-b09c-4e46-88c1-79ed83a39b75",
       "name": "MongoDB Chat Memory",
       "credentials": {
         "mongoDb": {
-          "id": "Vuo21cfiSVjXblIr",
+          "id": "wR5t7Mbd0bIPSXcv",
           "name": "MongoDB account"
         }
       }
@@ -44,10 +177,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2176,
-        1296
+        3296,
+        2880
       ],
-      "id": "d96d43e6-60f5-4081-a154-71064ee6a0ab",
+      "id": "c4287d2d-4e9f-4511-ad57-4c16ff9b661c",
       "name": "Clean Up",
       "onError": "continueRegularOutput"
     },
@@ -91,7 +224,7 @@
                 "conditions": [
                   {
                     "id": "8c844924-b2ed-48b0-935c-c66a8fd0c778",
-                    "leftValue": "={{ $('chat_bot').item.json.body.message.text }}",
+                    "leftValue": "={{ $json.body.message.text }}",
                     "rightValue": "",
                     "operator": {
                       "type": "string",
@@ -116,7 +249,7 @@
                 "conditions": [
                   {
                     "id": "8b435dee-29e5-4ac2-a827-1811c2f6f04d",
-                    "leftValue": "={{ $('chat_bot').item.json.body.message.photo_url }}",
+                    "leftValue": "={{ $json.body.message.photo_url }}",
                     "rightValue": "",
                     "operator": {
                       "type": "string",
@@ -141,7 +274,7 @@
                 "conditions": [
                   {
                     "id": "d39eb705-3eb9-4867-8448-9d3e4c72ea4d",
-                    "leftValue": "={{ $('chat_bot').item.json.body.message.from.id }}",
+                    "leftValue": "={{ $json.body.message.from.id }}",
                     "rightValue": "",
                     "operator": {
                       "type": "string",
@@ -184,13 +317,13 @@
         },
         "options": {}
       },
-      "id": "43d9eee2-c3ca-4f40-b180-0391be683bc0",
+      "id": "1bc7ef39-fc2c-47af-ae96-c27a1d35d01f",
       "name": "Switch",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        -7056,
-        1376
+        -1584,
+        2960
       ],
       "onError": "continueErrorOutput"
     },
@@ -201,7 +334,7 @@
             {
               "id": "976cf2c9-01b6-46cf-97b4-675a67ca57bc",
               "name": "content",
-              "value": "={{ $('chat_bot').item.json.body.message.text || $('chat_bot').item.json.message?.caption || \"[Ảnh được gửi - cần phân tích nếu muốn xem nội dung]\" }}",
+              "value": "={{ $json.body.message.text || $json.body.message?.caption || \"[Ảnh được gửi - cần phân tích nếu muốn xem nội dung]\" }}",
               "type": "string"
             },
             {
@@ -213,19 +346,19 @@
             {
               "id": "25e9ee59-63c9-4eb4-a9b2-0847f4f83b67",
               "name": "prompt",
-              "value": "={{ $('chat_bot').item.json.message?.caption || $('chat_bot').item.json.body.message.text || $json.content?.parts?.[0]?.text || \"\" }}",
+              "value": "={{ $json.body.message?.caption || $json.body.message.text || $json.content?.parts?.[0]?.text || \"\" }}",
               "type": "string"
             },
             {
               "id": "4a5e3df4-333a-43c6-9f72-4fe8b2bf9b60",
               "name": "metadata",
-              "value": "={{   JSON.stringify({     fileName: $('chat_bot').item.json.message?.document?.file_name || \"\",     fileSize: $('chat_bot').item.json.message?.document?.file_size || 0,     userName: $('chat_bot').item.json.message?.from?.first_name || \"\",     chatId: $('chat_bot').item.json.message?.chat?.id || \"\"   }) }}",
+              "value": "={{   JSON.stringify({     fileName: $json.body.message?.document?.file_name || \"\",     fileSize: $json.body.message?.document?.file_size || 0,     userName: $json.body.message?.from?.first_name || \"\",     chatId: $json.body.message?.chat?.id || \"\"   }) }}",
               "type": "string"
             },
             {
               "id": "0e732c1e-5c23-4edc-b83d-4a930d71ee0a",
               "name": "imageUrl",
-              "value": "={{ $('chat_bot').item.json.body.message.photo_url || \"\" }}",
+              "value": "={{ $json.body.message.photo_url || \"\" }}",
               "type": "string"
             },
             {
@@ -242,10 +375,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -5344,
-        1392
+        128,
+        2976
       ],
-      "id": "fe6c0531-8269-4011-83b8-a3519336b61a",
+      "id": "25f3b769-11aa-470d-ad9e-0dac9e4f4c6b",
       "name": "Input"
     },
     {
@@ -263,15 +396,15 @@
       "type": "@n8n/n8n-nodes-langchain.googleGemini",
       "typeVersion": 1,
       "position": [
-        -6464,
-        1248
+        -992,
+        2832
       ],
-      "id": "6acfac0b-8678-4593-8c3c-302620ae81c4",
+      "id": "2a9cb7da-78a0-4d77-8814-d71b56241c5e",
       "name": "Transcribe a recording",
       "credentials": {
         "googlePalmApi": {
-          "id": "asUjI24nITHkETAA",
-          "name": "Google Gemini(PaLM) Api account 2"
+          "id": "ivMQFozfvyKtTYit",
+          "name": "Google Gemini(PaLM) Api account"
         }
       },
       "onError": "continueRegularOutput"
@@ -323,16 +456,16 @@
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2.2,
       "position": [
-        -3136,
-        1984
+        2336,
+        3568
       ],
-      "id": "d199ecb7-71e0-44d6-9eb0-90ceb6c709b7",
+      "id": "d8e6ba37-2fd3-4d1d-92aa-da212dda29ad",
       "name": "Tro ly Email"
     },
     {
       "parameters": {
         "promptType": "define",
-        "text": "={{ $json.content?.parts?.[0]?.text || $json.content || $json.input || $json.text || $('chat_bot').item.json.body.message.text || $json.prompt || $json.body.message.text || $json.imageUrl ||\"\" }}",
+        "text": "={{ $json.content?.parts?.[0]?.text || $json.content || $json.input || $json.text || $json.body.message.text || $json.prompt || $json.body.message.text || $json.imageUrl ||\"\" }}",
         "options": {
           "systemMessage": "# ⛔ CẢNH BÁO: ĐỌC KỸ TRƯỚC KHI LÀM BẤT CỨ ĐIỀU GÌ\n\n## 🚫 TUYỆT ĐỐI CẤM TỰ TRẢ LỜI\n\nBạn là DISPATCHER (Điều phối viên), KHÔNG PHẢI chuyên gia.\n\n❌ BẠN KHÔNG ĐƯỢC:\n- Tự trả lời câu hỏi về giá cả, sản phẩm, vật liệu\n- Tự tính toán bất kỳ con số nào\n- Tự tạo báo giá\n- Trả lời \"em cần thêm thông tin\" mà không gọi tool\n\n✅ BẠN CHỈ ĐƯỢC:\n- Nhận yêu cầu → Gọi tool → Trả kết quả từ tool\n- Hỏi lại sếp NẾU không hiểu yêu cầu\n\n---\n\n## 📋 BẢNG GỌI TOOL BẮT BUỘC\n\n| Khi sếp nói | GỌI NGAY tool này |\n|-------------|-------------------|\n| báo giá, tính giá, giá bao nhiêu, tạo đơn, lên đơn, tủ, bàn, ghế, giường, kệ, sản phẩm, vật liệu, gỗ | **Tro ly ke toan** |\n| tồn kho, còn hàng, số lượng, kiểm tra kho | Tro ly kho |\n| tiến độ, thi công, lịch làm việc, nhân sự | Tro ly thi cong |\n| email, gửi mail, viết mail | Tro ly mail |\n| lịch hẹn, đặt lịch, xem lịch | Tro ly lich |\n| bản vẽ, kỹ thuật, CAD, thiết kế | Tro ly ky thuat |\n| buồn, vui, tâm sự, thời tiết, tin tức | Tro ly thong thai |\n\n---\n\n## ✅ VÍ DỤ ĐÚNG (LÀM THEO)\n\n### Ví dụ 1: Tạo báo giá\nUser: \"Tạo báo giá cho khách A, 2 tủ quần áo\"\n→ GỌI tool \"Tro ly ke toan\" với input: \"Tạo báo giá cho khách A, 2 tủ quần áo\"\n→ Trả về kết quả từ tool\n\n### Ví dụ 2: Hỏi giá\nUser: \"Giá gỗ sồi bao nhiêu?\"\n→ GỌI tool \"Tro ly ke toan\" với input: \"Giá gỗ sồi bao nhiêu?\"\n→ Trả về kết quả từ tool\n\n### Ví dụ 3: Tạo lại báo giá\nUser: \"Tạo lại báo giá\"\n→ GỌI tool \"Tro ly ke toan\" với input: \"Tạo lại báo giá\"\n→ Trả về kết quả từ tool\n\n---\n\n## ❌ VÍ DỤ SAI (TUYỆT ĐỐI KHÔNG LÀM)\n\nUser: \"Tạo báo giá cho khách A\"\n❌ SAI: \"Dạ sếp, để tạo báo giá em cần thêm thông tin về sản phẩm...\"\n❌ SAI: \"Sếp muốn báo giá sản phẩm gì ạ?\"\n❌ SAI: Tự liệt kê thông tin sản phẩm\n\n✅ ĐÚNG: Gọi tool \"Tro ly ke toan\" với input gốc, để tool đó tự hỏi thêm nếu cần\n\n---\n\n# OVERVIEW\n\nBạn là Trợ lý AI chính (Dispatcher) của xưởng nội thất MinhKhoa.\n\n**Nhiệm vụ DUY NHẤT:** Nhận yêu cầu → Gọi tool phù hợp → Trả kết quả từ tool\n\n# TOOLS\n\n1. **Tro ly ke toan** ⭐ QUAN TRỌNG NHẤT\n   - Dùng cho: báo giá, tính toán, giá cả, sản phẩm, vật liệu, tủ, bàn, ghế, gỗ\n   - Input: Toàn bộ yêu cầu của sếp (copy nguyên văn)\n\n2. **Tro ly kho**: Tồn kho, số lượng, kiểm tra hàng\n\n3. **Tro ly thi cong**: Tiến độ, thi công, nhân sự\n\n4. **Tro ly thong thai**: Tâm sự, chủ đề ngoài công việc\n\n5. **Tro ly mail**: Email\n\n6. **Tro ly lich**: Lịch hẹn\n\n7. **Tro ly ky thuat**: Bản vẽ, kỹ thuật, CAD\n\n8. **Search in Tavily**: Tìm kiếm thông tin MỚI NHẤT trên internet\n   - CHỈ dùng khi: giá thị trường, tin tức thời sự, đối thủ cạnh tranh, xu hướng mới\n   - KHÔNG dùng cho: giá sản phẩm của công ty, quy định nội bộ\n\n9. **Save Knowledge (Write)**: Ghi nhớ kiến thức mới\n   - Dùng khi: sếp dạy điều mới, sửa sai, hoặc tìm được thông tin hữu ích từ Tavily\n\n10. **Think**: Khi cần suy nghĩ phức tạp\n\n---\n\n# 🔍 QUY TẮC TÌM KIẾM (TAVILY)\n\n## ✅ KHI NÀO DÙNG \"Search in Tavily\"\n\n**CHỈ dùng khi sếp hỏi về:**\n- ✅ **Giá thị trường**: \"Giá gỗ sồi trên thị trường hiện tại?\", \"Giá ngoài bao nhiêu?\"\n- ✅ **Tin tức thời sự**: \"Tin tức mới nhất về nội thất\", \"Xu hướng nội thất 2025\"\n- ✅ **Đối thủ cạnh tranh**: \"Đối thủ của chúng ta là ai?\", \"So sánh với công ty X\"\n- ✅ **Xu hướng mới**: \"Xu hướng thiết kế mới nhất\", \"Mẫu tủ quần áo hot hiện tại\"\n\n## ❌ KHI NÀO KHÔNG DÙNG TAVILY\n\n**TUYỆT ĐỐI KHÔNG dùng khi:**\n- ❌ Hỏi về **giá sản phẩm của xưởng MinhKhoa** → Dùng \"Tro ly ke toan\"\n- ❌ Hỏi về **quy định nội bộ** → Kiểm tra \"KIẾN THỨC ĐÃ HỌC\" trước\n- ❌ Hỏi về **quy trình làm việc** → Kiểm tra \"KIẾN THỨC ĐÃ HỌC\" trước\n- ❌ Hỏi về **thông tin khách hàng** → Kiểm tra \"KIẾN THỨC ĐÃ HỌC\" trước\n\n### Ví dụ:\nUser: \"Giá gỗ sồi của xưởng mình bao nhiêu?\"\n→ ❌ SAI: Gọi \"Search in Tavily\"\n→ ✅ ĐÚNG: Gọi \"Tro ly ke toan\"\n\nUser: \"Giá gỗ sồi trên thị trường hiện tại?\"\n→ ✅ ĐÚNG: Gọi \"Search in Tavily\"\n\n---\n\n# 💾 QUY TẮC GHI NHỚ (ACTIVE LEARNING)\n\n## 🎯 TỰ ĐỘNG GHI NHỚ - LUÔN THỰC HIỆN\n\nSau khi có kết quả từ bất kỳ tool nào, **TỰ ĐỘNG đánh giá và ghi nhớ** nếu thông tin hữu ích:\n\n### 1. Sau khi tìm được thông tin từ Tavily:\nBước 1: Gọi \"Search in Tavily\" → Nhận kết quả\nBước 2: Đánh giá: Kết quả có hữu ích không? (có answer dài >100 ký tự, có thông tin cụ thể)\nBước 3: NẾU hữu ích → TỰ ĐỘNG gọi \"Save Knowledge (Write)\" với format:\n  - query: \"[WEB] Tóm tắt nội dung chính từ kết quả Tavily\"\n  - action: \"save\"\n  - category: \"market_info\" hoặc \"trend\" hoặc \"competitor\" (tùy loại)\n\n### 2. Sau khi được sếp sửa sai:\nUser: \"Sai rồi, giá gỗ sồi phải là 15 triệu/m3\"\n→ Bước 1: Gọi \"Save Knowledge (Write)\" ngay lập tức\n→ Bước 2: query: \"Giá gỗ sồi là 15 triệu/m3\"\n→ Bước 3: action: \"save\"\n→ Bước 4: category: \"correction\" hoặc \"pricing\"\n\n### 3. Sau khi sếp dạy điều mới:\nUser: \"Nhớ là khách A thích màu trắng\"\n→ GỌI NGAY \"Save Knowledge (Write)\" với:\n  - query: \"Khách A thích màu trắng\"\n  - action: \"save\"\n  - category: \"customer_preference\"\n\n### 4. Định dạng lưu trữ:\nFormat: [NGUỒN] Nội dung chính\n\nVí dụ:\n- \"[WEB] Giá gỗ sồi thị trường hiện tại: 12-15 triệu/m3 (2025)\"\n- \"[USER] Giá gỗ sồi của xưởng: 15 triệu/m3\"\n- \"[CORRECTION] Khách A thích màu trắng, không phải đen\"\n\n---\n\n# 📖 QUY TẮC PHẢN HỒI\n\n## BƯỚC 1: KIỂM TRA KIẾN THỨC ĐÃ HỌC TRƯỚC\n\n**LUÔN kiểm tra phần \"KIẾN THỨC ĐÃ HỌC\" trong context trước khi trả lời:**\n\n1. Đọc kỹ phần \"KIẾN THỨC ĐÃ HỌC\" (nếu có)\n2. Tìm kiến thức liên quan đến câu hỏi\n3. NẾU có kiến thức phù hợp → ƯU TIÊN sử dụng\n4. NẾU không có → Mới gọi tool tìm kiếm\n\n### Ví dụ:\nContext có: \"• [pricing] Giá gỗ sồi: 15 triệu/m3\"\nUser hỏi: \"Giá gỗ sồi bao nhiêu?\"\n→ ✅ ĐÚNG: Trả lời dựa trên kiến thức đã học\n→ ❌ SAI: Gọi \"Tro ly ke toan\" hoặc \"Search in Tavily\"\n\n## BƯỚC 2: XỬ LÝ MÂU THUẪN\n\n**Nếu kiến thức trong bộ nhớ mâu thuẫn với kết quả search mới:**\n\n1. Phát hiện mâu thuẫn: Kiến thức cũ vs Kết quả mới\n2. ƯU TIÊN kết quả mới nhất (từ Tavily hoặc từ sếp)\n3. TỰ ĐỘNG update bộ nhớ:\n   - Gọi \"Save Knowledge (Write)\" với thông tin mới\n   - Format: \"[CORRECTION] Thông tin mới (thay thế thông tin cũ)\"\n4. Trả lời: \"Em đã cập nhật thông tin mới nhất...\"\n\n### Ví dụ:\nKiến thức cũ: \"Giá gỗ sồi: 12 triệu/m3\"\nTavily trả về: \"Giá gỗ sồi thị trường 2025: 15 triệu/m3\"\n→ Bước 1: Phát hiện mâu thuẫn\n→ Bước 2: Ưu tiên kết quả mới (15 triệu)\n→ Bước 3: TỰ ĐỘNG gọi \"Save Knowledge (Write)\":\n  - query: \"[CORRECTION] Giá gỗ sồi thị trường 2025: 15 triệu/m3 (thay thế 12 triệu)\"\n  - action: \"save\"\n→ Bước 4: Trả lời: \"Dạ sếp, theo thông tin mới nhất, giá gỗ sồi thị trường hiện tại là 15 triệu/m3. Em đã cập nhật vào bộ nhớ.\"\n\n## BƯỚC 3: TỔNG HỢP THÔNG TIN\n\n**Khi có nhiều nguồn thông tin:**\n\n1. Kiến thức đã học (từ RAG)\n2. Kết quả từ Tavily (nếu có)\n3. Kết quả từ tool khác\n\n→ Tổng hợp tất cả, ưu tiên:\n   - Thông tin mới nhất (từ Tavily)\n   - Thông tin từ sếp (từ RAG)\n   - Thông tin từ tool chuyên môn (Tro ly ke toan, etc.)\n\n---\n\n# OUTPUT FORMAT\n\n1. Text thuần, KHÔNG dùng markdown (**, ##, ```)\n2. Xưng hô: \"em\" - \"sếp\"\n3. Chỉ chào ở lần tương tác ĐẦU TIÊN\n4. KHÔNG nói \"em đã chuyển cho trợ lý...\"\n5. Trả kết quả TRỰC TIẾP từ tool\n\n# RESPONSE TYPE (Ghi ở cuối response)\n\nSau khi có kết quả từ tool, ghi thêm:\n\n- RESPONSE_TYPE: \"quote_new\" - Khi tạo báo giá mới (có ảnh + PDF)\n- RESPONSE_TYPE: \"send_pdf\" - Khi gửi lại PDF\n- RESPONSE_TYPE: \"send_image\" - Khi gửi lại ảnh\n- RESPONSE_TYPE: \"text_only\" - Khi trả lời text thông thường\n\n---\n\n# ⚠️ NHẮC LẠI LẦN CUỐI\n\n**KHÔNG BAO GIỜ TỰ TRẢ LỜI VỀ:**\n- Giá cả\n- Sản phẩm\n- Vật liệu\n- Tính toán\n- Báo giá\n\n**LUÔN GỌI TOOL \"Tro ly ke toan\" cho các yêu cầu trên!**\n\n## KIẾN THỨC ĐÃ HỌC\n{{ $json.learningContext }}\n\n---\n\n# 🎓 TÓM TẮT QUY TRÌNH ACTIVE LEARNING\n\n## Luồng xử lý một câu hỏi:\n\n1. ĐỌC \"KIẾN THỨC ĐÃ HỌC\" → Có thông tin liên quan không?\n   ├─ CÓ → Sử dụng, nhưng kiểm tra tính cập nhật\n   └─ KHÔNG → Bước 2\n\n2. PHÂN TÍCH INTENT → Cần tìm kiếm web không?\n   ├─ Giá thị trường/Tin tức/Đối thủ/Xu hướng → Gọi \"Search in Tavily\"\n   └─ Giá công ty/Quy định nội bộ → Gọi \"Tro ly ke toan\" hoặc tool khác\n\n3. NHẬN KẾT QUẢ → Đánh giá và ghi nhớ\n   ├─ Từ Tavily → TỰ ĐỘNG gọi \"Save Knowledge (Write)\" nếu hữu ích\n   ├─ Từ sếp sửa sai → TỰ ĐỘNG gọi \"Save Knowledge (Write)\" ngay\n   └─ Phát hiện mâu thuẫn → Update bộ nhớ với thông tin mới\n\n4. TRẢ LỜI → Tổng hợp từ tất cả nguồn, ưu tiên thông tin mới nhất\n\n---\n\n# ✅ CHECKLIST TRƯỚC KHI TRẢ LỜI\n\n- Đã kiểm tra \"KIẾN THỨC ĐÃ HỌC\"?\n- Đã chọn đúng tool? (Tavily chỉ cho giá thị trường/tin tức/đối thủ/xu hướng)\n- Đã tự động ghi nhớ thông tin hữu ích?\n- Đã xử lý mâu thuẫn (nếu có)?\n- Đã tổng hợp thông tin từ nhiều nguồn?\n- Đã ghi RESPONSE_TYPE ở cuối?\n\n",
           "returnIntermediateSteps": true
@@ -341,10 +474,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3,
       "position": [
-        -3408,
-        1392
+        2064,
+        2976
       ],
-      "id": "351cdf68-3250-4394-9d6b-3d524e0be934",
+      "id": "bdaff07f-8f73-4e7f-ab68-19bab974a0ea",
       "name": "Tro ly chinh",
       "onError": "continueErrorOutput"
     },
@@ -370,10 +503,10 @@
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2.2,
       "position": [
-        -3008,
-        1984
+        2464,
+        3568
       ],
-      "id": "2a78b673-ae02-4d2a-8aca-dd070f0678aa",
+      "id": "9df9a539-4bb1-4f1e-af88-779b1ee8375f",
       "name": "Tro ly lich"
     },
     {
@@ -450,10 +583,10 @@
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2.2,
       "position": [
-        -3264,
-        1984
+        2208,
+        3568
       ],
-      "id": "fdadf563-90aa-46a9-a7f2-d7e76871e391",
+      "id": "2ff72896-6809-4e52-8208-a6932c2fef6f",
       "name": "Tro ly ky thuat"
     },
     {
@@ -464,11 +597,17 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
       "position": [
-        -7264,
-        2384
+        -1792,
+        3968
       ],
-      "id": "a3894d52-b853-468f-a2cc-7c46feddd659",
-      "name": "OpenRouter Chat Model"
+      "id": "73e3b964-760d-4f60-b475-df173f7ac6a9",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "MJfpFBAmvmcIM1N3",
+          "name": "OpenRouter account"
+        }
+      }
     },
     {
       "parameters": {
@@ -628,10 +767,10 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.3,
       "position": [
-        -6256,
-        1824
+        -784,
+        3408
       ],
-      "id": "f9b54be7-e394-400d-8ddb-508b0da6a1f5",
+      "id": "d15f7cec-7a72-42f7-bd75-6245d66b92e9",
       "name": "Switch2"
     },
     {
@@ -641,37 +780,37 @@
             {
               "id": "5e9f46cd-4af5-42ac-b18e-473ae9c78ee1",
               "name": "file_id",
-              "value": "={{ $('chat_bot1').item.json.message.document.file_id }}",
+              "value": "={{ $json.body.message.document.file_id }}",
               "type": "string"
             },
             {
               "id": "b3f55b7b-52f4-4e47-8d7e-72d8d74f6979",
               "name": "file_name",
-              "value": "={{ $('chat_bot1').item.json.message.document.file_name }}",
+              "value": "={{ $json.body.message.document.file_name }}",
               "type": "string"
             },
             {
               "id": "7fa10781-7b35-4111-b855-1759e8a04abb",
               "name": "file_size",
-              "value": "={{ $('chat_bot1').item.json.message.document.file_size }}",
+              "value": "={{ $json.body.message.document.file_size }}",
               "type": "number"
             },
             {
               "id": "d52661be-f338-4431-a643-ab13690ffa77",
               "name": "mine_type",
-              "value": "={{ $('chat_bot1').item.json.message.document.mime_type }}",
+              "value": "={{ $json.body.message.document.mime_type }}",
               "type": "string"
             },
             {
               "id": "434023a4-2a87-4a84-92c6-57d3592802c0",
               "name": "file_extension",
-              "value": "={{ $('chat_bot1').item.json.message.document.file_name.split('.').pop().toLowerCase() }}",
+              "value": "={{ $json.body.message.document.file_name.split('.').pop().toLowerCase() }}",
               "type": "string"
             },
             {
               "id": "6457640a-2104-48fe-a47b-000f8e556039",
               "name": "caption",
-              "value": "={{ $('chat_bot1').item.json.message.caption || '' }}",
+              "value": "={{ $json.body.message.caption || '' }}",
               "type": "string"
             }
           ]
@@ -682,10 +821,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -6464,
-        1824
+        -992,
+        3408
       ],
-      "id": "15c9551c-2198-49d0-9160-c5424043a8bc",
+      "id": "b14381ec-5d3f-4ae4-ae10-96186af958fa",
       "name": "Edit Fields",
       "onError": "continueRegularOutput"
     },
@@ -705,15 +844,15 @@
       "type": "@n8n/n8n-nodes-langchain.googleGemini",
       "typeVersion": 1,
       "position": [
-        -5888,
-        1824
+        -416,
+        3408
       ],
-      "id": "f7cd466c-3489-4877-b7fa-35264ae0a830",
+      "id": "95f4a2cf-44db-4ff9-b8aa-a21cf56ca193",
       "name": "Analyze document",
       "credentials": {
         "googlePalmApi": {
-          "id": "asUjI24nITHkETAA",
-          "name": "Google Gemini(PaLM) Api account 2"
+          "id": "ivMQFozfvyKtTYit",
+          "name": "Google Gemini(PaLM) Api account"
         }
       },
       "onError": "continueRegularOutput"
@@ -745,10 +884,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -5888,
-        2016
+        -416,
+        3600
       ],
-      "id": "125dcc2a-82b5-438b-ad40-dd74e3e282e5",
+      "id": "80c369a6-8621-4bc0-8071-b42aeb16b0e8",
       "name": "If File Size < 20MB"
     },
     {
@@ -783,10 +922,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -5616,
-        1856
+        -144,
+        3440
       ],
-      "id": "60307bda-79e9-4a48-aacb-9215a90b1a81",
+      "id": "7ed75443-b654-4f5e-bac9-0b5a744041c9",
       "name": "CAD to PDF",
       "onError": "continueRegularOutput"
     },
@@ -799,7 +938,7 @@
           "parameters": [
             {
               "name": "chat_id",
-              "value": "={{ $('chat_bot').item.json.body.message.chat.id }}"
+              "value": "={{ $json.body.message.chat.id }}"
             },
             {
               "name": "text",
@@ -812,32 +951,15 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -3008,
-        1504
+        2464,
+        3088
       ],
-      "id": "9d6ae1d2-911b-47d8-88d1-3446a573b7ca",
+      "id": "789cf794-38da-487a-b825-48dc44215417",
       "name": "Error Message1"
     },
     {
       "parameters": {
-        "httpMethod": "POST",
-        "path": "2c429418-efa2-4357-ba0a-c02758bbd000",
-        "responseMode": "responseNode",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2.1,
-      "position": [
-        -7728,
-        1440
-      ],
-      "id": "91c74a78-a049-4496-a340-d3a5d13c53c5",
-      "name": "chat_bot",
-      "webhookId": "2c429418-efa2-4357-ba0a-c02758bbd000"
-    },
-    {
-      "parameters": {
-        "url": "={{ $('chat_bot').item.json.body.message.photo_url }}",
+        "url": "={{ $json.body.message.photo_url }}",
         "options": {
           "response": {
             "response": {
@@ -849,10 +971,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -6688,
-        1568
+        -1216,
+        3152
       ],
-      "id": "13bff6cf-e329-4f0d-b92f-ef0b7bda9e65",
+      "id": "e9f5eb82-384f-4415-a9c9-fca335877e4f",
       "name": "Download Image",
       "onError": "continueRegularOutput"
     },
@@ -864,10 +986,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -6688,
-        1248
+        -1216,
+        2832
       ],
-      "id": "66df60b9-a6ba-41b1-80af-1b9d5825d561",
+      "id": "93829b72-18f7-49c6-8e6e-6501e3176cb0",
       "name": "Download Voice",
       "onError": "continueRegularOutput"
     },
@@ -980,16 +1102,16 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        -2000,
-        1296
+        3472,
+        2880
       ],
-      "id": "08e179c4-3fb4-4bea-969f-49306f3d8ad4",
+      "id": "e0799823-f6aa-42f1-8d2d-77d56db49aa9",
       "name": "Agent Log",
       "retryOnFail": true,
       "maxTries": 5,
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "XFnTKPAp5jRfLJcN",
+          "id": "k9q7ceY6SMWzzelv",
           "name": "Google Sheets account"
         }
       }
@@ -1063,10 +1185,10 @@
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2.2,
       "position": [
-        -3392,
-        1984
+        2080,
+        3568
       ],
-      "id": "cadb738a-8e8c-4686-a3dc-718af5a225bb",
+      "id": "3a6a9d73-e605-4c6f-9805-e0faa8b78490",
       "name": "Tro ly ke toan"
     },
     {
@@ -1086,15 +1208,15 @@
       "type": "@n8n/n8n-nodes-langchain.googleGemini",
       "typeVersion": 1,
       "position": [
-        -5984,
-        1488
+        -512,
+        3072
       ],
-      "id": "a5452c85-fb66-47fd-a34f-550bde3c9d2d",
+      "id": "c041b9a6-883f-4edd-bbf0-c59429c30aa1",
       "name": "Analyze an image",
       "credentials": {
         "googlePalmApi": {
-          "id": "asUjI24nITHkETAA",
-          "name": "Google Gemini(PaLM) Api account 2"
+          "id": "ivMQFozfvyKtTYit",
+          "name": "Google Gemini(PaLM) Api account"
         }
       },
       "onError": "continueRegularOutput"
@@ -1111,7 +1233,7 @@
           "conditions": [
             {
               "id": "dd907e87-49ce-4525-862c-54059820173b",
-              "leftValue": "={{ $('chat_bot').first().json.body.message.caption || $json.caption || '' }}",
+              "leftValue": "={{ $json.body.message.caption || $json.caption || '' }}",
               "rightValue": "phân tích",
               "operator": {
                 "type": "string",
@@ -1120,7 +1242,7 @@
             },
             {
               "id": "d22d6c30-11fb-4d49-a43a-ee458ac670f7",
-              "leftValue": "={{ $('chat_bot').first().json.body.message.caption || $json.caption || '' }}",
+              "leftValue": "={{ $json.body.message.caption || $json.caption || '' }}",
               "rightValue": "xem",
               "operator": {
                 "type": "string",
@@ -1129,7 +1251,7 @@
             },
             {
               "id": "7ce92bce-4a09-477f-905c-dccb07e5e129",
-              "leftValue": "={{ $('chat_bot').first().json.body.message.caption || $json.caption || '' }}",
+              "leftValue": "={{ $json.body.message.caption || $json.caption || '' }}",
               "rightValue": "đọc",
               "operator": {
                 "type": "string",
@@ -1138,7 +1260,7 @@
             },
             {
               "id": "f420f5d0-2c66-42b8-8647-6c342f306b59",
-              "leftValue": "={{ $('chat_bot').first().json.body.message.caption || $json.caption || '' }}",
+              "leftValue": "={{ $json.body.message.caption || $json.caption || '' }}",
               "rightValue": "analyze",
               "operator": {
                 "type": "string",
@@ -1147,7 +1269,7 @@
             },
             {
               "id": "e5b80510-f153-43cd-8cb7-5da472023b88",
-              "leftValue": "={{ $('chat_bot').first().json.body.message.caption || $json.caption || '' }}",
+              "leftValue": "={{ $json.body.message.caption || $json.caption || '' }}",
               "rightValue": "=mô tả",
               "operator": {
                 "type": "string",
@@ -1156,7 +1278,7 @@
             },
             {
               "id": "25a3e8c6-d7ae-4f20-8983-aee8a72e6449",
-              "leftValue": "={{ $('chat_bot').first().json.body.message.caption || $json.caption || '' }}",
+              "leftValue": "={{ $json.body.message.caption || $json.caption || '' }}",
               "rightValue": "là gì",
               "operator": {
                 "type": "string",
@@ -1171,15 +1293,15 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -6256,
-        1568
+        -784,
+        3152
       ],
-      "id": "9d2b5a16-1e4e-47bf-94fc-94e460c3dce2",
+      "id": "ef663879-2e3d-4b31-8f63-1afe52e0513f",
       "name": "Check Caption Analyze"
     },
     {
       "parameters": {
-        "url": "={{ $('chat_bot').item.json.body.message.from.id }}",
+        "url": "={{ $json.body.message.from.id }}",
         "options": {
           "response": {
             "response": {
@@ -1191,25 +1313,12 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -6688,
-        1824
+        -1216,
+        3408
       ],
-      "id": "ea3bc070-fb31-4782-8d91-b53105e38a5b",
+      "id": "3de2c744-c6cd-4f59-8ffe-ba0bc1e68697",
       "name": "Download Documents",
       "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
-        "jsCode": "const longText = $('Tro ly chinh').first().json.output || \"\"; \nconst limit = 1900; \n\nconst chunks = [];\nfor (let i = 0; i < longText.length; i += limit) {\n  chunks.push({\n    json: {\n      message_part: longText.substring(i, i + limit)\n    }\n  });\n}\n\nreturn chunks;"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -3072,
-        512
-      ],
-      "id": "f0a53b6b-3514-4e77-b54a-75d9116d29c8",
-      "name": "Split Response"
     },
     {
       "parameters": {
@@ -1218,45 +1327,17 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        -7424,
-        2624
+        -1952,
+        4208
       ],
-      "id": "2d3c7735-88f2-4fc6-bb11-4618772c0d27",
+      "id": "aeffdcfb-18d8-4248-ab0b-63355d0a9498",
       "name": "Google Gemini Chat Model",
       "credentials": {
         "googlePalmApi": {
-          "id": "asUjI24nITHkETAA",
-          "name": "Google Gemini(PaLM) Api account 2"
+          "id": "ivMQFozfvyKtTYit",
+          "name": "Google Gemini(PaLM) Api account"
         }
       }
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://bot-api.zaloplatforms.com/bot3560693075024509922:IRydnWGAAtlekyTBevNhCHkSOOsuCWvBMphBNeSurWcpTbkMgRSRTpvKJbWMWbYX/sendChatAction",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "chat_id",
-              "value": "={{ $json.body.message.chat.id }}"
-            },
-            {
-              "name": "action",
-              "value": "typing"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        -7504,
-        1440
-      ],
-      "id": "38586693-5562-4842-bec5-26d7621b4e22",
-      "name": "Send Processing Message"
     },
     {
       "parameters": {
@@ -1267,11 +1348,11 @@
           "parameters": [
             {
               "name": "url",
-              "value": "https://n8n-home.minhkhoaagent.top/webhook/2c429418-efa2-4357-ba0a-c02758bbd000"
+              "value": "https://n8n.minhkhoaagent.top/webhook/zalo-gateway-new"
             },
             {
               "name": "secret_token",
-              "value": "12345678"
+              "value": "agent123456"
             }
           ]
         },
@@ -1280,10 +1361,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -7696,
-        2592
+        -2224,
+        4176
       ],
-      "id": "0620991c-756e-4744-b0c9-7171f968699e",
+      "id": "32b7bf58-4bb5-4d32-974c-96bc957b1ea9",
       "name": "HTTP Request"
     },
     {
@@ -1295,7 +1376,7 @@
           "parameters": [
             {
               "name": "chat_id",
-              "value": "={{ $('chat_bot').item.json.body.message.chat.id }}"
+              "value": "={{ $json.body.message.chat.id }}"
             },
             {
               "name": "text",
@@ -1308,10 +1389,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -5616,
-        2128
+        -144,
+        3712
       ],
-      "id": "f6f4f9fd-496e-4a0b-a50b-c852ec6c75e2",
+      "id": "444bafa8-9cb4-4a76-b4ea-aa38be8221f0",
       "name": "Error Message"
     },
     {
@@ -1356,301 +1437,11 @@
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2.2,
       "position": [
-        -2880,
-        1984
+        2592,
+        3568
       ],
-      "id": "b8b0c6d1-a9d9-4708-9874-3c13e4799c40",
+      "id": "40cf7de4-a6f5-4a11-8099-7d311f92ee80",
       "name": "Save Knowledge (Write)"
-    },
-    {
-      "parameters": {
-        "rules": {
-          "values": [
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.responseType }}",
-                    "rightValue": "quote_new",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "Quote New"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.responseType }}",
-                    "rightValue": "send_pdf",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "Send PDF"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.responseType }}",
-                    "rightValue": "send_image",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "Send Image"
-            }
-          ]
-        },
-        "options": {
-          "fallbackOutput": "extra"
-        }
-      },
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.2,
-      "position": [
-        -3744,
-        320
-      ],
-      "id": "c0013f50-bb69-44c8-9a87-e9851ace1009",
-      "name": "Response Type"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://bot-api.zaloplatforms.com/bot3560693075024509922:IRydnWGAAtlekyTBevNhCHkSOOsuCWvBMphBNeSurWcpTbkMgRSRTpvKJbWMWbYX/sendPhoto",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "chat_id",
-              "value": "={{ $('chat_bot').first().json.body.message.chat.id }}"
-            },
-            {
-              "name": "photo",
-              "value": "={{ $json.imageUrl }}"
-            },
-            {
-              "name": "caption",
-              "value": "=📋 Báo giá {{ $json.quoteNumber }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        -3408,
-        112
-      ],
-      "id": "d9b685a0-5204-4e85-9a22-e476a96b3332",
-      "name": "SendPhoto (Quote)"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://bot-api.zaloplatforms.com/bot3560693075024509922:IRydnWGAAtlekyTBevNhCHkSOOsuCWvBMphBNeSurWcpTbkMgRSRTpvKJbWMWbYX/sendMessage",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "chat_id",
-              "value": "={{ $('chat_bot').first().json.body.message.chat.id }}"
-            },
-            {
-              "name": "text",
-              "value": "={{ 'Sếp ơi, em đã tạo báo giá ' + $('Extract Quote Data').first().json.quoteNumber + ' xong ạ!\\n\\n📋 Chi tiết trong ảnh phía trên.' + ($('Extract Quote Data').first().json.pdfUrl ? '\\n\\n📄 Tải PDF: ' + $('Extract Quote Data').first().json.pdfUrl : '\\n\\nNếu cần file PDF, sếp báo em nhé!') }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        -3184,
-        112
-      ],
-      "id": "fbbae30f-e110-4f2c-8895-bc1cf89b68d9",
-      "name": "SendMessage (After Photo)"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://bot-api.zaloplatforms.com/bot3560693075024509922:IRydnWGAAtlekyTBevNhCHkSOOsuCWvBMphBNeSurWcpTbkMgRSRTpvKJbWMWbYX/sendSticker",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "chat_id",
-              "value": "={{ $('chat_bot').first().json.body.message.chat.id }}"
-            },
-            {
-              "name": "sticker",
-              "value": "442d73e94faca6f2ffbd"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        -2960,
-        112
-      ],
-      "id": "023e0de0-2a44-461e-b383-d4e527b25a36",
-      "name": "SendSticker (Success)"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://bot-api.zaloplatforms.com/bot3560693075024509922:IRydnWGAAtlekyTBevNhCHkSOOsuCWvBMphBNeSurWcpTbkMgRSRTpvKJbWMWbYX/sendMessage",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "chat_id",
-              "value": "={{ $('chat_bot').first().json.body.message.chat.id }}"
-            },
-            {
-              "name": "text",
-              "value": "={{ 'Dạ, đây là file PDF báo giá ' + $json.quoteNumber + ':\\n\\n📄 ' + $json.pdfUrl }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        -3408,
-        272
-      ],
-      "id": "b62b36cc-8449-4a75-aa0f-eaf8633937a1",
-      "name": "SendMessage (PDF Only)"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://bot-api.zaloplatforms.com/bot${BOT_TOKEN}/sendPhoto",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "chat_id",
-              "value": "={{ $('chat_bot').first().json.body.message.chat.id }}"
-            },
-            {
-              "name": "photo",
-              "value": "={{ $json.imageUrl }}"
-            },
-            {
-              "name": "caption",
-              "value": "=📋 Ảnh báo giá {{ $json.quoteNumber }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        -3408,
-        432
-      ],
-      "id": "5cd5121c-47ff-4d6f-a004-1ce6e5189f36",
-      "name": "SendPhoto (Image Only)"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://bot-api.zaloplatforms.com/bot3560693075024509922:IRydnWGAAtlekyTBevNhCHkSOOsuCWvBMphBNeSurWcpTbkMgRSRTpvKJbWMWbYX/sendMessage",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "chat_id",
-              "value": "={{ $('chat_bot').first().json.body.message.chat.id }}"
-            },
-            {
-              "name": "text",
-              "value": "={{ $json.output }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        -3408,
-        592
-      ],
-      "id": "521057cb-7812-402c-8a86-9dbaa2e99c4e",
-      "name": "SendMessage (Text Only)"
-    },
-    {
-      "parameters": {
-        "jsCode": "const item = $input.first().json;\n\nlet output = item.output || item.message_part || '';\nconst cleanOutput = output.replace(/\\\\n/g, ' ').replace(/\\n/g, ' ');\n\nlet imageUrl = '';\nlet pdfUrl = '';\nlet quoteNumber = '';\nlet responseType = 'text_only';\n\n// Tìm URLs\nconst imgMatch = cleanOutput.match(/https:\\/\\/res\\.cloudinary\\.com\\/[^\\s\"<>]+\\.(png|jpg|jpeg)/i);\nif (imgMatch) {\n  imageUrl = imgMatch[0].trim();\n}\n\nconst pdfMatch = cleanOutput.match(/https:\\/\\/res\\.cloudinary\\.com\\/[^\\s\"<>]+\\.pdf/i);\nif (pdfMatch) {\n  pdfUrl = pdfMatch[0].trim();\n}\n\n// Tìm quoteNumber\nconst qnMatch = cleanOutput.match(/BG-\\d{8}-\\d{3}/);\nif (qnMatch) {\n  quoteNumber = qnMatch[0];\n}\n\n// Detect response type - ƯU TIÊN THEO THỨ TỰ\nconst outputLower = output.toLowerCase();\n\n// 1. SEND_PDF: Có PDF link + text phù hợp\nif (pdfUrl && (\n    outputLower.includes('đây là file pdf') || \n    outputLower.includes('đây là pdf') || \n    outputLower.includes('file pdf báo giá') ||\n    outputLower.includes('tải pdf') ||\n    outputLower.includes('link pdf') ||\n    (outputLower.includes('pdf') && !outputLower.includes('tạo báo giá'))\n)) {\n  responseType = 'send_pdf';\n}\n// 2. SEND_IMAGE: Có Image link + text phù hợp (không có PDF)\nelse if (imageUrl && !pdfUrl && (\n    outputLower.includes('đây là ảnh') || \n    outputLower.includes('ảnh báo giá')\n)) {\n  responseType = 'send_image';\n}\n// 3. QUOTE_NEW: Có Image + text tạo mới\nelse if (imageUrl && (\n    outputLower.includes('đã tạo báo giá') || \n    outputLower.includes('em đã lập báo giá') ||\n    outputLower.includes('tạo báo giá') ||\n    outputLower.includes('báo giá mới')\n)) {\n  responseType = 'quote_new';\n}\n// 4. TEXT_ONLY: Mặc định\nelse {\n  responseType = 'text_only';\n}\n\n// Cắt ngắn output\nlet shortOutput = output;\nif (output.length > 1900) {\n  shortOutput = output.substring(0, 1900) + '...';\n}\n\n// Debug log\nconsole.log('Response Type:', responseType);\nconsole.log('PDF URL:', pdfUrl);\nconsole.log('Image URL:', imageUrl);\n\nreturn [{\n  json: {\n    output: shortOutput,\n    imageUrl: imageUrl,\n    pdfUrl: pdfUrl,\n    quoteNumber: quoteNumber,\n    responseType: responseType\n  }\n}];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -3952,
-        352
-      ],
-      "id": "b9c4d283-40ac-4547-b83d-bdcab5782a8c",
-      "name": "Extract Quote Data"
-    },
-    {
-      "parameters": {
-        "jsCode": "const item = $input.first().json;\n\n// 1. Lấy output thô từ AI\nlet rawOutput = item.output || item.message_part || '';\n// Clean text (xóa xuống dòng thừa)\nconst cleanOutput = rawOutput.replace(/\\\\n/g, ' ').replace(/\\n/g, ' ');\n\n// 2. Tìm URLs (Bắt mọi loại link http/https kết thúc bằng đuôi file)\nlet imageUrl = '';\nlet pdfUrl = '';\nlet quoteNumber = '';\n\n// Regex tìm ảnh (jpg, png, jpeg, webp) - Không giới hạn domain\nconst imgMatch = cleanOutput.match(/(https?:\\/\\/[^\\s\"<>)]+?\\.(?:png|jpg|jpeg|webp))/i);\nif (imgMatch) imageUrl = imgMatch[0].trim();\n\n// Regex tìm PDF - Không giới hạn domain\nconst pdfMatch = cleanOutput.match(/(https?:\\/\\/[^\\s\"<>)]+?\\.pdf)/i);\nif (pdfMatch) pdfUrl = pdfMatch[0].trim();\n\n// Regex tìm Mã báo giá (Ví dụ: BG-2024...)\nconst qnMatch = cleanOutput.match(/(BG-\\d{8}-\\d{3}|QT-\\d{8}-\\d{3})/i);\nif (qnMatch) quoteNumber = qnMatch[0];\n\n// 3. XỬ LÝ RESPONSE TYPE\nlet responseMode = 'text_only'; // Mặc định\nlet finalText = rawOutput;\n\n// Tìm thẻ RESPONSE_TYPE do Prompt sinh ra\nconst typeMatch = rawOutput.match(/RESPONSE_TYPE:\\s*[\"']?([a-zA-Z_]+)[\"']?/i);\n\nif (typeMatch) {\n    const typeFromAI = typeMatch[1].toLowerCase();\n    \n    // Map logic\n    if (typeFromAI.includes('quote_new') || typeFromAI.includes('all')) {\n        responseMode = 'all'; \n    } else if (typeFromAI.includes('send_pdf')) {\n        responseMode = 'pdf';\n    } else if (typeFromAI.includes('send_image')) {\n        responseMode = 'image';\n    } else {\n        responseMode = 'text';\n    }\n\n    // Xóa dòng RESPONSE_TYPE khỏi tin nhắn để đẹp\n    finalText = rawOutput.replace(/RESPONSE_TYPE:\\s*[\"']?[a-zA-Z_]+[\"']?/gi, '').trim();\n} else {\n    // FALLBACK: Nếu AI quên gắn thẻ, tự đoán dựa trên việc có link hay không\n    if (imageUrl && pdfUrl) {\n        responseMode = 'all';\n    } else if (pdfUrl) {\n        // Nếu có PDF mà trong text có từ khóa 'ảnh', 'hình' -> có thể là all\n        if (rawOutput.toLowerCase().includes('ảnh') || rawOutput.toLowerCase().includes('hình')) {\n             responseMode = 'all';\n        } else {\n             responseMode = 'pdf';\n        }\n    } else if (imageUrl) {\n        responseMode = 'image';\n    }\n}\n\n// Trả về kết quả\nreturn [{\n    json: {\n        output: finalText,\n        imageUrl: imageUrl,\n        pdfUrl: pdfUrl,\n        quoteNumber: quoteNumber,\n        response_mode: responseMode\n    }\n}];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -2880,
-        512
-      ],
-      "id": "1cebb895-4be7-437e-b13e-d29de388c956",
-      "name": "Xử lý Response Type"
     },
     {
       "parameters": {
@@ -1660,14 +1451,14 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
       "typeVersion": 1,
       "position": [
-        -3824,
-        1984
+        1648,
+        3568
       ],
-      "id": "97ed8a8b-6c77-4239-954a-a94976fc3b15",
+      "id": "706cb8f7-c6d7-4861-936c-0305beb6d2b2",
       "name": "Groq Chat Model",
       "credentials": {
         "groqApi": {
-          "id": "ae6JkkHs31zWCVLF",
+          "id": "VkFyanoifIIhja6j",
           "name": "Groq account"
         }
       }
@@ -1679,10 +1470,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1792,
-        1296
+        3680,
+        2880
       ],
-      "id": "977cd747-0e0b-4f8c-95ed-f002e83e1b74",
+      "id": "fad8c4ac-58b8-4ee0-a9ef-395f70aaaf39",
       "name": "Analyze and Get link",
       "onError": "continueRegularOutput"
     },
@@ -1695,7 +1486,7 @@
           "parameters": [
             {
               "name": "chat_id",
-              "value": "={{ $('chat_bot').first().json.body.message.chat.id }}"
+              "value": "={{ $json.body.message.chat.id }}"
             },
             {
               "name": "photo",
@@ -1712,10 +1503,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -1360,
-        1136
+        4112,
+        2720
       ],
-      "id": "567b5670-cfea-4b0e-b92a-ede45636a594",
+      "id": "17c41fe9-609c-4d54-aea9-3150eec89d24",
       "name": "Send Photo",
       "onError": "continueRegularOutput"
     },
@@ -1766,10 +1557,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -1568,
-        1296
+        3904,
+        2880
       ],
-      "id": "a7ab2ac7-4bfc-4a88-9db0-12b69e2141dc",
+      "id": "b9fd2f3c-fb5e-416e-a4c3-6c5822379fb3",
       "name": "Has Image?"
     },
     {
@@ -1818,10 +1609,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -1120,
-        1296
+        4352,
+        2880
       ],
-      "id": "ad2e6fb9-bcd1-4c62-9770-5c369e8cc0bd",
+      "id": "df96c524-bd70-4104-b468-4708e78ab138",
       "name": "Has PDF?"
     },
     {
@@ -1833,7 +1624,7 @@
           "parameters": [
             {
               "name": "chat_id",
-              "value": "={{ $('chat_bot').first().json.body.message.chat.id }}"
+              "value": "={{ $json.body.message.chat.id }}"
             },
             {
               "name": "text",
@@ -1846,10 +1637,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -880,
-        1136
+        4592,
+        2720
       ],
-      "id": "b1bada3e-8bb9-434c-ae9d-f5df2ccf3449",
+      "id": "dfb74778-feb5-4a55-b68a-ef998f587e6d",
       "name": "Send PDF",
       "onError": "continueRegularOutput"
     },
@@ -1860,10 +1651,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -640,
-        1296
+        4832,
+        2880
       ],
-      "id": "3390f290-8def-4a03-b247-97c4b596838a",
+      "id": "7f2c56e4-bcb9-48e9-9da3-d1074df828de",
       "name": "Split Text"
     },
     {
@@ -1875,7 +1666,7 @@
           "parameters": [
             {
               "name": "chat_id",
-              "value": "={{ $('chat_bot').first().json.body.message.chat.id }}"
+              "value": "={{ $json.body.message.chat.id }}"
             },
             {
               "name": "text",
@@ -1888,23 +1679,23 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -416,
-        1296
+        5056,
+        2880
       ],
-      "id": "2656ce2f-ba35-4932-b85f-b909241c2732",
+      "id": "96237535-26ab-45e4-9ccc-bcef4a80215b",
       "name": "Send Text"
     },
     {
       "parameters": {
-        "jsCode": "// Get all items from input\nconst inputItems = $input.all();\n\nfor (let i = 0; i < inputItems.length; i++) {\n  const item = inputItems[i];\n  \n  // Lấy photo_url từ chat_bot\n  try {\n    const chatBotData = $('chat_bot').first().json;\n    item.json.photo_url = chatBotData?.body?.message?.photo_url || '';\n  } catch (e) {\n    item.json.photo_url = '';\n  }\n\n  // Fix MIME type nếu cần\n  if (item.binary && item.binary.data) {\n    if (item.binary.data.mimeType === 'image/jpg') {\n      item.binary.data.mimeType = 'image/jpeg';\n      item.binary.data.fileExtension = 'jpeg';\n    }\n  }\n}\n\nreturn inputItems;"
+        "jsCode": "// Get all items from input\nconst inputItems = $input.all();\n\nfor (let i = 0; i < inputItems.length; i++) {\n  const item = inputItems[i];\n  \n  // Lấy photo_url từ queue data\n  try {\n    const queueData = $('Convert Queue Data').first().json;\n    item.json.photo_url = queueData?.body?.message?.photo_url || '';\n  } catch (e) {\n    item.json.photo_url = '';\n  }\n\n  // Fix MIME type nếu cần\n  if (item.binary && item.binary.data) {\n    if (item.binary.data.mimeType === 'image/jpg') {\n      item.binary.data.mimeType = 'image/jpeg';\n      item.binary.data.fileExtension = 'jpeg';\n    }\n  }\n}\n\nreturn inputItems;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -6464,
-        1568
+        -992,
+        3152
       ],
-      "id": "2f8ece7a-ca41-4169-ac91-6870f7565d4c",
+      "id": "b505d534-987f-44fe-ba3a-6a2dc326b64e",
       "name": "Fix Input Item",
       "onError": "continueRegularOutput"
     },
@@ -1917,7 +1708,7 @@
           "parameters": [
             {
               "name": "chat_id",
-              "value": "={{ $('chat_bot').item.json.body.message.from.id }}"
+              "value": "={{ $json.body.message.from.id }}"
             },
             {
               "name": "action",
@@ -1930,10 +1721,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -2352,
-        1296
+        3120,
+        2880
       ],
-      "id": "6cfb408a-2e7e-47fc-b0d4-acbf2d7ce201",
+      "id": "07b9f51e-058f-4996-b709-9717074033ac",
       "name": "Send Processing Message2",
       "onError": "continueRegularOutput"
     },
@@ -1944,11 +1735,17 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        -7264,
-        2624
+        -1792,
+        4208
       ],
-      "id": "ebee3181-20e6-4a1a-87b2-18cf19b4e935",
-      "name": "Ollama Chat Model"
+      "id": "3cc11af4-a16a-4b68-b184-1a2d6da9077f",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "ZeYl5rYP7Kr1YqY6",
+          "name": "Ollama account"
+        }
+      }
     },
     {
       "parameters": {
@@ -1957,20 +1754,20 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -3856,
-        1392
+        1616,
+        2976
       ],
-      "id": "c64ecd0e-4629-41e9-82a9-592a41af08c5",
+      "id": "e43724e1-b0ec-4da2-b257-06617ae5b58e",
       "name": "Merge Context"
     },
     {
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "x2L5rQZ1DPGBD6zJ",
+          "value": "r4F4YVmXVwKOH0Ne",
           "mode": "list",
-          "cachedResultUrl": "/workflow/x2L5rQZ1DPGBD6zJ",
-          "cachedResultName": "Tool - RAG Knowledge"
+          "cachedResultUrl": "/workflow/r4F4YVmXVwKOH0Ne",
+          "cachedResultName": "RAG Knowledge - Pinecone"
         },
         "workflowInputs": {
           "mappingMode": "defineBelow",
@@ -2018,10 +1815,10 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        -4912,
-        1392
+        560,
+        2976
       ],
-      "id": "e4bf7ed0-099c-4373-a137-2a91449096a6",
+      "id": "ba6d966b-454c-4855-9304-f4ba46b91614",
       "name": "Search Knowledge"
     },
     {
@@ -2031,10 +1828,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -5136,
-        1392
+        336,
+        2976
       ],
-      "id": "9ad941ce-752d-4edd-ba39-20f39681d573",
+      "id": "79fec34a-c49b-4903-ba65-5ea22303149f",
       "name": "Prepare Smart Search"
     },
     {
@@ -2065,23 +1862,23 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -4704,
-        1392
+        768,
+        2976
       ],
-      "id": "94bdcb23-9e88-43d9-be0c-49f1c0f23a6e",
+      "id": "51226af9-e213-4208-92f2-94be2c47aa5e",
       "name": "If"
     },
     {
       "parameters": {
-        "jsCode": "// Detect knowledge mới cần học\nlet agentOutput = '';\nlet userInput = '';\n\ntry {\n  agentOutput = $('Tro ly chinh').first().json.output || '';\n} catch (e) {\n  agentOutput = '';\n}\n\ntry {\n  userInput = $('Input').first().json.content || \n              $('Input').first().json.prompt || \n              $('chat_bot').first().json.body?.message?.text || '';\n} catch (e) {\n  userInput = '';\n}\n\n// Patterns cần học\nconst learnPatterns = [\n  { pattern: /nhớ (là|rằng|nhé)/i, category: 'knowledge' },\n  { pattern: /ghi nhớ/i, category: 'knowledge' },\n  { pattern: /từ (giờ|nay)/i, category: 'preference' },\n  { pattern: /quy định (mới|là)/i, category: 'process' },\n  { pattern: /sai rồi.*(đúng là|phải là)/i, category: 'correction' },\n  { pattern: /không phải.*(mà là|là)/i, category: 'correction' }\n];\n\nlet shouldLearn = false;\nlet category = 'general';\nlet contentToLearn = userInput;\n\nfor (const item of learnPatterns) {\n  if (item.pattern.test(userInput)) {\n    shouldLearn = true;\n    category = item.category;\n    break;\n  }\n}\n\n// Nếu agent xác nhận đã học\nif (agentOutput.toLowerCase().includes('đã ghi nhớ') || \n    agentOutput.toLowerCase().includes('em nhớ rồi')) {\n  shouldLearn = true;\n}\n\nreturn [{\n  json: {\n    shouldLearn: shouldLearn,\n    contentToLearn: contentToLearn,\n    category: category\n  }\n}];"
+        "jsCode": "// Detect knowledge mới cần học\nlet agentOutput = '';\nlet userInput = '';\n\ntry {\n  agentOutput = $('Tro ly chinh').first().json.output || '';\n} catch (e) {\n  agentOutput = '';\n}\n\ntry {\n  userInput = $('Input').first().json.content || \n              $('Input').first().json.prompt || \n              $('Convert Queue Data').first().json.body?.message?.text || '';\n} catch (e) {\n  userInput = '';\n}\n\n// Patterns cần học\nconst learnPatterns = [\n  { pattern: /nhớ (là|rằng|nhé)/i, category: 'knowledge' },\n  { pattern: /ghi nhớ/i, category: 'knowledge' },\n  { pattern: /từ (giờ|nay)/i, category: 'preference' },\n  { pattern: /quy định (mới|là)/i, category: 'process' },\n  { pattern: /sai rồi.*(đúng là|phải là)/i, category: 'correction' },\n  { pattern: /không phải.*(mà là|là)/i, category: 'correction' }\n];\n\nlet shouldLearn = false;\nlet category = 'general';\nlet contentToLearn = userInput;\n\nfor (const item of learnPatterns) {\n  if (item.pattern.test(userInput)) {\n    shouldLearn = true;\n    category = item.category;\n    break;\n  }\n}\n\n// Nếu agent xác nhận đã học\nif (agentOutput.toLowerCase().includes('đã ghi nhớ') || \n    agentOutput.toLowerCase().includes('em nhớ rồi')) {\n  shouldLearn = true;\n}\n\nreturn [{\n  json: {\n    shouldLearn: shouldLearn,\n    contentToLearn: contentToLearn,\n    category: category\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -3024,
-        1296
+        2448,
+        2880
       ],
-      "id": "69ec7a30-1a0d-44fa-aa6b-252b77631988",
+      "id": "0df5d5af-323b-42e1-bd30-eac661c2dbe9",
       "name": "Detect New Knowledge"
     },
     {
@@ -2112,10 +1909,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -2816,
-        1296
+        2656,
+        2880
       ],
-      "id": "2c2c2387-9318-4eb5-b4aa-7c1bd822a76f",
+      "id": "b328ba1c-5b2e-4cee-8b92-278593f7a5ff",
       "name": "If Should Learn"
     },
     {
@@ -2172,10 +1969,10 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        -2592,
-        1200
+        2880,
+        2784
       ],
-      "id": "900f5e2d-74b8-47b8-89eb-a072347b8146",
+      "id": "e50855ec-d044-41c7-a8b6-5261dc26a5c7",
       "name": "Execute Save to RAG"
     },
     {
@@ -2190,14 +1987,14 @@
       "type": "@tavily/n8n-nodes-tavily.tavily",
       "typeVersion": 1,
       "position": [
-        -4496,
-        1296
+        976,
+        2880
       ],
-      "id": "7233f74f-ad43-442d-a8e6-a10aef153d65",
+      "id": "17917473-17ea-434f-871c-c6ed7240d05b",
       "name": "Search Tavily",
       "credentials": {
         "tavilyApi": {
-          "id": "frJkAA30QYGrhpDL",
+          "id": "pY0x9kpc8XPIIprO",
           "name": "Tavily account"
         }
       }
@@ -2209,10 +2006,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -4288,
-        1296
+        1184,
+        2880
       ],
-      "id": "805dcf3d-fe5e-4134-a7de-69f2e3c3eaf3",
+      "id": "b15ef08a-c293-45e0-aae8-57c755834d64",
       "name": "Check Tavily Quality"
     },
     {
@@ -2243,10 +2040,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -4080,
-        1296
+        1392,
+        2880
       ],
-      "id": "57dc4e28-20f7-4892-bea0-30bcd4d48e4a",
+      "id": "1ac45c1b-e0f8-4e01-b7ad-b67e5897129d",
       "name": "If Good Result"
     },
     {
@@ -2303,10 +2100,10 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        -3856,
-        1200
+        1616,
+        2784
       ],
-      "id": "adbfdc90-5490-4ddc-86f3-5781536aaf25",
+      "id": "619e8a03-1d55-4d8a-80e8-35d50050283d",
       "name": "Auto Save Web Knowledge"
     },
     {
@@ -2316,10 +2113,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -3648,
-        1200
+        1824,
+        2784
       ],
-      "id": "7a4d0736-ef52-4628-9e84-64941b6fa292",
+      "id": "b1e900f6-6579-4410-b278-28b306024519",
       "name": "Log Save Result"
     },
     {
@@ -2336,34 +2133,56 @@
       "type": "@tavily/n8n-nodes-tavily.tavilyTool",
       "typeVersion": 1,
       "position": [
-        -2720,
-        1984
+        2752,
+        3568
       ],
-      "id": "87573bf8-1981-4406-b72d-26a75db15cca",
+      "id": "45c1a32f-9326-4caa-8a61-4bf4bc1f5d5d",
       "name": "Search in Tavily",
       "credentials": {
         "tavilyApi": {
-          "id": "frJkAA30QYGrhpDL",
+          "id": "pY0x9kpc8XPIIprO",
           "name": "Tavily account"
         }
       }
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "{\"status\": \"ok\"}",
-        "options": {
-          "responseCode": 200
-        }
+        "method": "PATCH",
+        "url": "=https://zamexodnbxgmazdnajtd.supabase.co/rest/v1/message_buffer",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphbWV4b2RuYnhnbWF6ZG5hanRkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjU5ODM1MiwiZXhwIjoyMDgyMTc0MzUyfQ.mAC3J7FD9ZY3RJL3hf7QSly_QoelpVmhERIe0NPnQHA"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphbWV4b2RuYnhnbWF6ZG5hanRkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjU5ODM1MiwiZXhwIjoyMDgyMTc0MzUyfQ.mAC3J7FD9ZY3RJL3hf7QSly_QoelpVmhERIe0NPnQHA"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"status\": \"completed\",\n  \"completed_at\": {{ JSON.stringify($now.toISO()) }}\n}",
+        "options": {}
       },
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.5,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
       "position": [
-        -7296,
-        1440
+        5280,
+        2880
       ],
-      "id": "df988e16-9391-46b8-953e-d2d44b8149aa",
-      "name": "Respond to Webhook"
+      "id": "5ff6406e-add8-4b67-bc7b-77c105f0a61f",
+      "name": "Mark Completed"
     }
   ],
   "pinData": {},
@@ -2603,11 +2422,55 @@
         ]
       ]
     },
-    "chat_bot": {
+    "Schedule Trigger": {
       "main": [
         [
           {
-            "node": "Send Processing Message",
+            "node": "Get Pending Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending Message": {
+      "main": [
+        [
+          {
+            "node": "Has message?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has message?": {
+      "main": [
+        [
+          {
+            "node": "Lock message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lock message": {
+      "main": [
+        [
+          {
+            "node": "Convert Queue Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert Queue Data": {
+      "main": [
+        [
+          {
+            "node": "Switch",
             "type": "main",
             "index": 0
           }
@@ -2698,99 +2561,12 @@
         ]
       ]
     },
-    "Split Response": {
-      "main": [
-        [
-          {
-            "node": "Xử lý Response Type",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Send Processing Message": {
-      "main": [
-        [
-          {
-            "node": "Respond to Webhook",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Save Knowledge (Write)": {
       "ai_tool": [
         [
           {
             "node": "Tro ly chinh",
             "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Response Type": {
-      "main": [
-        [
-          {
-            "node": "SendPhoto (Quote)",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "SendMessage (PDF Only)",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "SendPhoto (Image Only)",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "SendMessage (Text Only)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "SendPhoto (Quote)": {
-      "main": [
-        [
-          {
-            "node": "SendMessage (After Photo)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "SendMessage (After Photo)": {
-      "main": [
-        [
-          {
-            "node": "SendSticker (Success)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Extract Quote Data": {
-      "main": [
-        [
-          {
-            "node": "Response Type",
-            "type": "main",
             "index": 0
           }
         ]
@@ -3066,28 +2842,54 @@
         ]
       ]
     },
-    "Respond to Webhook": {
+    "Send Text": {
       "main": [
         [
           {
-            "node": "Switch",
+            "node": "Mark Completed",
             "type": "main",
             "index": 0
           }
         ]
       ]
+    },
+    "Error Message1": {
+      "main": [
+        [
+          {
+            "node": "Mark Completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Message": {
+      "main": [
+        [
+          {
+            "node": "Mark Completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        []
+      ]
     }
   },
   "active": true,
   "settings": {
-    "executionOrder": "v1",
-    "availableInMCP": false
+    "executionOrder": "v1"
   },
-  "versionId": "88708f74-bdc3-4981-9d73-e055c5ce45a6",
+  "versionId": "3598228d-2acc-4132-b3a3-c6a78c781764",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "69e895a6c5b8ce31f24bef11428401cf3ae06095d76628a1259bda113b4a62f2"
+    "instanceId": "f79905368cdd8aefd97993159c6f1b332d2bef60e6af085cda589aa3db810691"
   },
-  "id": "w7EkHuzyVfqfdjTB",
+  "id": "frCGAUJ64i1bm8bB",
   "tags": []
 }

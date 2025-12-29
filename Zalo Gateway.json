@@ -4,17 +4,17 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "2c429418-efa2-4357-ba0a-c02758bbd000",
+        "path": "zalo-gateway-new",
         "responseMode": "responseNode",
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -400,
-        300
+        -608,
+        112
       ],
-      "id": "webhook-trigger",
+      "id": "a459a863-a2fc-49ce-9ec7-b061655303f0",
       "name": "Zalo Webhook",
       "webhookId": "2c429418-efa2-4357-ba0a-c02758bbd000"
     },
@@ -25,10 +25,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -200,
-        300
+        -400,
+        112
       ],
-      "id": "parse-message",
+      "id": "9a9608db-d7c3-48d8-88f6-c9b62f649f04",
       "name": "Parse Message"
     },
     {
@@ -58,10 +58,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        0,
-        300
+        -208,
+        112
       ],
-      "id": "check-valid",
+      "id": "26f4cae4-735e-4e38-9166-faa60585501c",
       "name": "Is Valid?"
     },
     {
@@ -88,15 +88,21 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"p_chat_id\": {{ JSON.stringify($json.chat_id) }},\n  \"p_user_id\": {{ JSON.stringify($json.user_id) }},\n  \"p_user_name\": {{ JSON.stringify($json.user_name) }},\n  \"p_message_text\": {{ JSON.stringify($json.message_text) }},\n  \"p_message_type\": {{ JSON.stringify($json.message_type) }},\n  \"p_photo_url\": {{ JSON.stringify($json.photo_url) }},\n  \"p_voice_file_id\": {{ JSON.stringify($json.voice_file_id) }},\n  \"p_document\": {{ JSON.stringify($json.document) }},\n  \"p_buffer_window_seconds\": 3\n}",
-        "options": {}
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        200,
-        200
+        0,
+        0
       ],
-      "id": "save-to-buffer",
+      "id": "4ffcca4e-922d-4116-bb89-34ad455e6474",
       "name": "Save to Buffer"
     },
     {
@@ -110,10 +116,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        400,
-        200
+        208,
+        0
       ],
-      "id": "respond-ok",
+      "id": "540ce4aa-8ef3-4448-9b05-9bd8fcf49428",
       "name": "Respond OK"
     },
     {
@@ -127,10 +133,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        200,
-        400
+        0,
+        208
       ],
-      "id": "respond-skip",
+      "id": "a95dd44e-cbe9-4bbc-b2f9-24bc7c055b63",
       "name": "Respond Skip"
     }
   ],
@@ -192,11 +198,10 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "zalo-gateway-v1",
+  "versionId": "3c1e319d-8321-4652-b329-0a535f561495",
   "meta": {
-    "templateCredsSetupCompleted": true
+    "instanceId": "f79905368cdd8aefd97993159c6f1b332d2bef60e6af085cda589aa3db810691"
   },
-  "id": "zalo-gateway-workflow",
+  "id": "XPeGtRZoFjHooi2G",
   "tags": []
 }
-

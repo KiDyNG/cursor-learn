@@ -23,10 +23,10 @@
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
       "position": [
-        1472,
-        1632
+        -928,
+        128
       ],
-      "id": "1c9fe827-1b46-44a5-9f4d-e58541d0cd2c",
+      "id": "aa407dd8-7a4d-40f6-8759-d68f3f2513fb",
       "name": "Workflow Trigger"
     },
     {
@@ -36,10 +36,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1712,
-        1632
+        -688,
+        128
       ],
-      "id": "1f9c8849-4126-4e02-aee3-a293ccd14835",
+      "id": "5d992d3b-0163-4a3e-83c7-e9f1cefcfb0c",
       "name": "Parse Input"
     },
     {
@@ -103,10 +103,10 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        1952,
-        1616
+        -448,
+        112
       ],
-      "id": "a4dbaacb-e3c0-4cea-8652-c132856180b8",
+      "id": "b4d32944-f16d-4502-831b-f74fd0c58dab",
       "name": "Route Action"
     },
     {
@@ -142,10 +142,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        2832,
-        1504
+        352,
+        0
       ],
-      "id": "b3c8197d-f414-4b3f-9f38-6f82efbe9c24",
+      "id": "aa0d4587-93df-4e5b-9f50-b7f3a4ba3e5c",
       "name": "Save to Supabase"
     },
     {
@@ -177,10 +177,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        2832,
-        1744
+        352,
+        240
       ],
-      "id": "a1e624ce-c922-47cd-b6b9-cdf61103e266",
+      "id": "a65eebc3-db6b-4d4a-ab3e-54c22f4ac7f9",
       "name": "Search Supabase",
       "alwaysOutputData": false
     },
@@ -191,10 +191,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3072,
-        1504
+        592,
+        0
       ],
-      "id": "fb072e63-2b00-4dd0-80b2-2b018f9d149a",
+      "id": "734eef6e-47be-4376-88d6-5989204ee93b",
       "name": "Format Save Result",
       "alwaysOutputData": true
     },
@@ -205,10 +205,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3072,
-        1744
+        592,
+        240
       ],
-      "id": "c2583f8f-906b-4f49-a84c-c6166db3cca7",
+      "id": "d99f334b-cade-4d34-9e00-1a8e6db286c5",
       "name": "Format Search Result",
       "alwaysOutputData": true
     },
@@ -224,10 +224,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        2400,
-        1504
+        -80,
+        0
       ],
-      "id": "0c309f86-bdd1-4cbf-a756-a1235f44d93f",
+      "id": "dcd20bd4-1619-40b9-a6fd-f156d7220287",
       "name": "Get Embedding (Save)"
     },
     {
@@ -242,10 +242,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        2400,
-        1744
+        -80,
+        240
       ],
-      "id": "a4468552-41f0-48a0-b7a1-36e9df1628f3",
+      "id": "690e8afe-6174-4b5e-be43-109cd4b31590",
       "name": "Get Embedding (Search)"
     },
     {
@@ -255,10 +255,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2608,
-        1504
+        128,
+        0
       ],
-      "id": "1fd51b88-de89-47a2-9d1d-8c93162e4f40",
+      "id": "7bce6616-2c79-4e13-a48a-ea82a1dc9ec3",
       "name": "Parse Embedding (Save)"
     },
     {
@@ -268,10 +268,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2608,
-        1744
+        128,
+        240
       ],
-      "id": "1a8cf916-b088-422a-a4c5-066c3e597064",
+      "id": "b099c3b2-af5b-48c8-a909-a95ad6a761c9",
       "name": "Parse Embedding (Search)"
     }
   ],
@@ -387,13 +387,15 @@
   "active": true,
   "settings": {
     "executionOrder": "v1",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
   },
-  "versionId": "1f6700e3-e2c3-480d-89cc-ec58882a516d",
+  "versionId": "b18b853a-a890-4851-ab9b-5a13a4a6aeed",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "69e895a6c5b8ce31f24bef11428401cf3ae06095d76628a1259bda113b4a62f2"
+    "instanceId": "f79905368cdd8aefd97993159c6f1b332d2bef60e6af085cda589aa3db810691"
   },
-  "id": "x2L5rQZ1DPGBD6zJ",
+  "id": "BKK33Pu7stWD1pR1",
   "tags": []
 }
